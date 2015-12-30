@@ -124,8 +124,6 @@ class Data {
     }
     
 
-
-
     ~Data() {
       if (trainMat) {
         gk_csr_Free(&trainMat);
@@ -141,6 +139,7 @@ class Data {
       }
       //TODO: make sure eigen matrix freed
     }
+
 };
 
 

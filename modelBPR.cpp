@@ -78,9 +78,56 @@ std::array<int, 3> ModelBPR::sampleTriplet(const Data &data) {
   return triplet;
 }
 
+
+void ModelBPR::computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
+    Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad) {
+  double r_ui, r_uj, r_uij, expCoeff;
+  
+  r_ui  = (uFeat - iFeat).transpose()*W*iFeat;
+  r_uj  = uFeat.transpose()*W*jFeat;
+  r_uij = r_ui - r_uj;
+  expCoeff = 1.0/(1.0 + exp(r_uij));  
+   
+  //reset Wgrad to gradient of l2 reg
+  Wgrad = 2.0*l2Reg*W;
+  Wgrad -= expCoeff*((uFeat - iFeat)*iFeat.transpose()
+                      - uFeat*jFeat.transpose());
+}
+
+
+
 void ModelBPR::train(const Data &data, Model& bestModel) {
+
+  int u, i, j;
+  Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
+  Eigen::VectorXf iFeat(nFeatures);
+  Eigen::VectorXf jFeat(nFeatures);
+  Eigen::VectorXf uFeat(nFeatures);
+
+  int trainNNZ = getNNZ(data.trainMat); 
   
+  std::array<int, 3> triplet;
   
+  for (int iter = 0; iter < maxIter; iter++) {
+    for (int subIter = 0; subIter < trainNNZ; subIter++) {
+        
+      //sample triplet
+      triplet = sampleTriplet(data);
+      uFeat = data.uFeatAcuum.row(triplet[0]); 
+      extractFeat(data.itemFeatMat, triplet[1], iFeat);
+      extractFeat(data.itemFeatMat, triplet[2], jFeat);
+      
+      //compute gradient
+      computeBPRGrad(uFeat, iFeat, jFeat, Wgrad);
+
+      //update W
+      W -= learnRate*Wgrad;
+
+      //TODO:nuclear norm projection on each triplet or after all sub-iters
+      performNucNormProj(W, nucReg);
+    }
+    //perform model evaluation on validation set
+  }
 
 }
 

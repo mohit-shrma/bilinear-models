@@ -20,7 +20,6 @@ class Model {
     virtual float objective(const Data& data); 
     virtual void train(const Data &data, Model& bestModel);
 
-
 };
 
 #endif
