@@ -2,6 +2,7 @@
 #define _MODEL_H_
 
 #include <Eigen/Dense>
+#include "const.h"
 
 class Model {
   
@@ -19,6 +20,12 @@ class Model {
 
     virtual float objective(const Data& data); 
     virtual void train(const Data &data, Model& bestModel);
+    
+    float computeRecall(gk_csr_t *mat, const Data &data, int N, 
+        std::unordered_set<int> items);
+
+    bool isTerminateModel(Model& bestModel, const Data& data, int iter,
+      int& bestIter, float& bestRecall, float& prevRecall); 
 
 };
 

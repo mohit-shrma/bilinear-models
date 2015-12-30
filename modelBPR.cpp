@@ -98,12 +98,12 @@ void ModelBPR::computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
 
 void ModelBPR::train(const Data &data, Model& bestModel) {
 
-  int u, i, j;
+  int u, i, j, bestIter;
   Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf jFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
-
+  float bestRecall, prevRecall;
   int trainNNZ = getNNZ(data.trainMat); 
   
   std::array<int, 3> triplet;
@@ -126,7 +126,13 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       //TODO:nuclear norm projection on each triplet or after all sub-iters
       performNucNormProj(W, nucReg);
     }
+    
     //perform model evaluation on validation set
+    if (iter %OBJ_ITER == 0) {
+      isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
+          prevRecall);
+    }
+  
   }
 
 }
