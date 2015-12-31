@@ -7,7 +7,7 @@
 void performNucNormProj(Eigen::MatrixXf& W, float gamma) {
     
   //compute thin svd
-  Eigen::JacobiSVD<Eigen::MatrixXf> svd(denseMat, 
+  Eigen::JacobiSVD<Eigen::MatrixXf> svd(W, 
       Eigen::ComputeThinU|Eigen::ComputeThinV);
  
   auto thinU = svd.matrixU();
@@ -24,7 +24,7 @@ void performNucNormProj(Eigen::MatrixXf& W, float gamma) {
   }
 
   //update W = U*S*V^T
-  W = thinU*singVec*thinV.transpose()
+  W = thinU*singVec*thinV.transpose();
 }
 
 

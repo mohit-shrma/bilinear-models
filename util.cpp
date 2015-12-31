@@ -1,8 +1,8 @@
 #include "util.h"
 
 
-unordered_set<int> getPosUsers(gk_csr_t *mat) {
-  unordered_set<int> userSet;
+std::unordered_set<int> getPosUsers(gk_csr_t *mat) {
+  std::unordered_set<int> userSet;
   for (int u = 0; u < mat->nrows; u++) {
     for (int ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
       if (mat->rowval[ii] > 0) {
@@ -16,9 +16,9 @@ unordered_set<int> getPosUsers(gk_csr_t *mat) {
 }
 
 
-unordered_set<int> getItemSet(gk_csr_t *mat) {
+std::unordered_set<int> getItemSet(gk_csr_t *mat) {
   
-  unordered_set<int> itemSet;
+  std::unordered_set<int> itemSet;
   for (int u = 0; u < mat->nrows; u++) {
     for (int ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
       itemSet.insert(mat->rowind[ii]);
@@ -40,8 +40,8 @@ int getNNZ(gk_csr_t *mat) {
 
 void extractFeat(gk_csr_t *itemFeatMat, int item, Eigen::VectorXf& fVec) {
   
-  //TODO: init fVec to 0
-  fVec = fVec * 0;
+  //init fVec to 0
+  fVec.fill(0);
   for (int ii = itemFeatMat->rowptr[item]; ii < itemFeatMat->rowptr[item+1];
         ii++) {
     fVec[itemFeatMat->rowind[ii]] = itemFeatMat->rowval[ii];

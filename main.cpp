@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
   
   //create baseline model
   Model cosineModel(params, data.nFeatures);
-  cosineModel.W = MatrixXd::Identity(data.nFeatures, data.nFeatures);
+  cosineModel.W = Eigen::MatrixXf::Identity(data.nFeatures, data.nFeatures);
   float baseRecall = cosineModel.computeRecall(data.testMat, data, 10, 
       data.testItems);
   

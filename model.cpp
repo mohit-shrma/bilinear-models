@@ -64,7 +64,7 @@ bool Model::isTerminateModel(Model& bestModel, const Data& data, int iter,
 float Model::computeRecall(gk_csr_t *mat, const Data &data, int N, 
     std::unordered_set<int> items) {
 
-  int u, i, j, ii;
+  int u, i, ii;
   int nRelevantUsers;
   float rating;
   Eigen::VectorXf iFeat(nFeatures);
@@ -101,7 +101,7 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
     //compute ratings over all testItems
     for (const int &item: items) {
       extractFeat(data.itemFeatMat, item, iFeat);
-      rating = data.uFeatAcuum.row(u).transpose()*W*iFeat;
+      rating = data.uFeatAcuum.row(u)*W*iFeat;
       itemRatings.push_back(std::make_pair(item, rating));
     }
     
@@ -110,7 +110,7 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
         itemRatings.end(), comparePair); 
     
     //get the set of top-N items for the user
-    topNitems.clear()
+    topNitems.clear();
     for (i = 0; i < N; i++) {
       topNitems.insert(itemRatings[i].first);
     }

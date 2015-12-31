@@ -2,6 +2,8 @@
 #define _MODEL_BPR_H_
 
 #include "model.h"
+#include "mathUtil.h"
+#include <array>
 
 class ModelBPR: public Model {
   

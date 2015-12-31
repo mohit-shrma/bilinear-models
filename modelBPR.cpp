@@ -41,7 +41,6 @@ std::array<int, 3> ModelBPR::sampleTriplet(const Data &data) {
     } else {
       //search for implicit 0
       
-      //TODO: do == check once all the code is finished
       if (0 == jj) {
         start = 0;
         end = ui_rowind[ui_rowptr[u]]; //first rated item by u
@@ -98,7 +97,7 @@ void ModelBPR::computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
 
 void ModelBPR::train(const Data &data, Model& bestModel) {
 
-  int u, i, j, bestIter;
+  int bestIter;
   Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf jFeat(nFeatures);
@@ -122,10 +121,10 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
 
       //update W
       W -= learnRate*Wgrad;
-
-      //TODO:nuclear norm projection on each triplet or after all sub-iters
-      performNucNormProj(W, nucReg);
     }
+    
+    //TODO:nuclear norm projection on each triplet or after all sub-iters
+    performNucNormProj(W, nucReg);
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {

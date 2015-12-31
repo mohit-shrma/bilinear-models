@@ -4,6 +4,7 @@
 #include <iostream>
 #include <unordered_set>
 #include "util.h"
+#include "GKlib.h"
 
 class Params {
 
@@ -31,7 +32,7 @@ class Params {
             : trainMatFile(p_trainMatFile), testMatFile(p_testMatFile),
             valMatFile(p_valMatFile), itemFeatureFile(p_itemFeatureFile),
             l2Reg(p_l2Reg), nucReg(p_nucReg), learnRate(p_learnRate),
-            rank(p_rank), seed(p_seed), pcSamples(p_pcSample),
+            rank(p_rank), seed(p_seed), pcSamples(p_pcSamples),
             maxIter(p_maxIter), isFeatNorm(p_isFeatNorm) {}
     
     void display() {
