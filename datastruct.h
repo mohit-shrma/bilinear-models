@@ -76,27 +76,27 @@ class Data {
       itemFeatMat = NULL;
 
       if (NULL != params.trainMatFile) {
-        std::cout << "\nReading partial train matrix 0-indexed... ";
-        trainMat = gk_csr_Read(params.trainMatFile, GK_CSR_FMT_CSR, 1, 0);
+        std::cout << "\nReading partial train matrix 1-indexed... ";
+        trainMat = gk_csr_Read(params.trainMatFile, GK_CSR_FMT_CSR, 1, 1);
         gk_csr_CreateIndex(trainMat, GK_CSR_COL);
         nUsers = trainMat->nrows;
       }
       
       if (NULL != params.testMatFile) {
-        std::cout << "\nReading partial test matrix 0-indexed... ";
-        testMat = gk_csr_Read(params.testMatFile, GK_CSR_FMT_CSR, 1, 0);
+        std::cout << "\nReading partial test matrix 1-indexed... ";
+        testMat = gk_csr_Read(params.testMatFile, GK_CSR_FMT_CSR, 1, 1);
         gk_csr_CreateIndex(testMat, GK_CSR_COL);
       }
       
       if (NULL != params.valMatFile) {
-        std::cout << "\nReading partial val matrix 0-indexed... ";
-        valMat = gk_csr_Read(params.valMatFile, GK_CSR_FMT_CSR, 1, 0);
+        std::cout << "\nReading partial val matrix 1-indexed... ";
+        valMat = gk_csr_Read(params.valMatFile, GK_CSR_FMT_CSR, 1, 1);
         gk_csr_CreateIndex(valMat, GK_CSR_COL);
       }
       
       if (NULL != params.itemFeatureFile) {
-        std::cout << "\nRading item-features matrix 0-indexed... ";
-        itemFeatMat = gk_csr_Read(params.itemFeatureFile, GK_CSR_FMT_CSR, 1, 0);
+        std::cout << "\nReading item-features matrix 1-indexed... ";
+        itemFeatMat = gk_csr_Read(params.itemFeatureFile, GK_CSR_FMT_CSR, 1, 1);
         if (params.isFeatNorm) {
           gk_csr_Normalize(itemFeatMat, GK_CSR_ROW, 2);
         }

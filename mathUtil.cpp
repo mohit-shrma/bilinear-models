@@ -24,7 +24,7 @@ void performNucNormProj(Eigen::MatrixXf& W, float gamma) {
   }
 
   //update W = U*S*V^T
-  W = thinU*singVec*thinV.transpose();
+  W = thinU*singVec.asDiagonal()*thinV.transpose();
 }
 
 

@@ -1,7 +1,8 @@
 #include <iostream>
 #include "datastruct.h"
 #include "model.h"
-
+#include "modelBPR.h"
+#include "modelRMSE.h"
 
 Params parse_cmd_line(int argc, char *argv[]) {
   
@@ -33,9 +34,20 @@ int main(int argc, char *argv[]) {
   cosineModel.W = Eigen::MatrixXf::Identity(data.nFeatures, data.nFeatures);
   float baseRecall = cosineModel.computeRecall(data.testMat, data, 10, 
       data.testItems);
+  std::cout << "\nTest recall: " << baseRecall << std::endl;
   
+  Model bestModel(params, data.nFeatures);
   //create bpr model
-  //TODO:
+  //ModelBPR bprModel(params, data.nFeatures);
+  //bprModel.train(data, bestModel); 
+  
+  //create rmse model
+  ModelRMSE rmseModel(params, data.nFeatures);
+  rmseModel.train(data, bestModel);
+
+  float recall = bestModel.computeRecall(data.testMat, data, 10, 
+      data.testItems);
+  std::cout << "\nTest recall: " << recall << std::endl;
 
   return 0;
 }

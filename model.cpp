@@ -16,7 +16,8 @@ Model::Model(const Params &params, int p_nFeatures) {
       W(i,j) = (float)std::rand()/ (float)(1.0 + RAND_MAX);
     }
   }
-
+  
+  std::cout << "\nW norm: " << W.norm() << std::endl;
 }
 
 
@@ -28,7 +29,7 @@ bool Model::isTerminateModel(Model& bestModel, const Data& data, int iter,
   
   if (iter > 0) {
     
-    if (currRecall < bestRecall) {
+    if (currRecall > bestRecall) {
       bestModel = *this;
       bestRecall = currRecall;
       bestIter = iter;
@@ -56,6 +57,47 @@ bool Model::isTerminateModel(Model& bestModel, const Data& data, int iter,
   }
 
   prevRecall = currRecall;
+
+  return ret;
+}
+
+
+bool Model::isTerminateModelObj(Model& bestModel, const Data& data, int iter,
+    int& bestIter, float& bestObj, float& prevObj) {
+  
+  bool ret = false;
+  float currObj = objective(data);
+  
+  if (iter > 0) {
+    
+    if (currObj > bestObj) {
+      bestModel = *this;
+      bestObj = currObj;
+      bestIter = iter;
+    }
+    
+    if (iter - bestIter >= 500) {
+      std::cout << "\nNOT CONVERGED: bestIter: " << bestIter << 
+        " bestObj: " << bestObj << " currIter: " << iter << 
+        " currObj: " << currObj << std::endl;
+      ret = true;
+    }
+
+    if (fabs(prevObj - currObj) < EPS) {
+      //convergence
+      std::cout << "\nConverged in iteration: " << iter << " prevObj: "
+        << prevObj << " currObj: " << currObj;
+      ret = true;
+    }
+
+  }
+
+  if (0 == iter) {
+    bestObj = currObj;
+    bestIter = iter;
+  }
+
+  prevObj = currObj;
 
   return ret;
 }

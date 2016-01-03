@@ -17,7 +17,7 @@ CPPFLAGS=-g -O3 -Wall -std=c++11 -I$(GKINCHOME) -I$(EIGENPATH)
 LDFLAGS=-g
 LDLIBS=$(STDLIBS) $(EXT_LIBS_DIR) $(EXT_LIBS)  
 
-SRCS=model.cpp modelBPR.cpp mathUtil.cpp util.cpp  main.cpp
+SRCS=model.cpp modelRMSE.cpp modelBPR.cpp mathUtil.cpp util.cpp  main.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 all: bilinear
