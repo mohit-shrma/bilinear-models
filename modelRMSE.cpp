@@ -17,8 +17,8 @@ float ModelRMSE::objective(const Data& data) {
     uFeat = data.uFeatAcuum.row(u);
     for (ii = data.trainMat->rowptr[u]; 
         ii < data.trainMat->rowptr[u+1]; ii++) {
-      extractFeat(data.itemFeatMat, item, iFeat);
       item = data.trainMat->rowind[ii];
+      extractFeat(data.itemFeatMat, item, iFeat);
       r_ui_est = (uFeat - iFeat).transpose()*W*iFeat;
       r_ui = data.trainMat->rowval[ii];
       rmse += (r_ui_est - r_ui)*(r_ui_est-r_ui);
@@ -27,7 +27,6 @@ float ModelRMSE::objective(const Data& data) {
   }
 
   //compute thin svd
-  /*
   Eigen::JacobiSVD<Eigen::MatrixXf> svd(W, 
       Eigen::ComputeThinU|Eigen::ComputeThinV);
   auto singVec = svd.singularValues();
@@ -35,7 +34,6 @@ float ModelRMSE::objective(const Data& data) {
     nucNorm += singVec[ii]; 
   }
   nucNormReg = nucNorm*nucReg;
-  */
 
   obj += rmse + uReg + nucNormReg;
   
@@ -69,7 +67,7 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
 
   for (int iter = 0; iter < maxIter; iter++) {
-    for (int subIter = 0; subIter < 10; subIter++) {
+    for (int subIter = 0; subIter < trainNNZ; subIter++) {
       
       //sample user
       while (1) {
@@ -101,9 +99,6 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
       W -= learnRate*Wgrad;
       //TODO:nuclear norm projection on each triplet or after all sub-iters
       performNucNormProj(W, nucReg);
-      
-      std::cout << "\nsubIter: " << subIter << " W norm: " << 
-        W.norm() << std::endl;
 
       //std::cout << W << std::endl;
     }

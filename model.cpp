@@ -70,7 +70,7 @@ bool Model::isTerminateModelObj(Model& bestModel, const Data& data, int iter,
   
   if (iter > 0) {
     
-    if (currObj > bestObj) {
+    if (currObj < bestObj) {
       bestModel = *this;
       bestObj = currObj;
       bestIter = iter;
