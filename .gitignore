@@ -3,5 +3,6 @@
 bilinear
 .depend
 test.*
-
+tags
+*.swp
 
