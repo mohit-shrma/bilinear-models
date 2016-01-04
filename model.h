@@ -4,10 +4,12 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include <vector>
+#include <cmath>
 #include "const.h"
 #include "datastruct.h"
 #include "model.h"
 #include "GKlib.h"
+
 
 class Model {
   
@@ -34,7 +36,7 @@ class Model {
     
     float computeRecall(gk_csr_t *mat, const Data &data, int N, 
         std::unordered_set<int> items);
-
+    float computeRMSE(gk_csr_t *mat, const Data& data);
     bool isTerminateModel(Model& bestModel, const Data& data, int iter,
       int& bestIter, float& bestRecall, float& prevRecall); 
 

@@ -149,11 +149,15 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {
       valRecall = computeRecall(data.valMat, data, 10, data.valItems);
-      isTerminateModelObj(bestModel, data, iter, bestIter, bestObj, 
-          prevObj);
+      if (isTerminateModelObj(bestModel, data, iter, bestIter, bestObj, 
+          prevObj)) {
+        break;
+      }
       std::cout << std::endl << "Iter: " << iter << " obj: " << prevObj
         << " best iter: " << bestIter << " best obj: " << bestObj 
         << " val recall: " << valRecall << " W norm: " << W.norm();
+      std::cout << "\nTrain RMSE: " 
+        << bestModel.computeRMSE(data.trainMat, data);
     }
 
   }

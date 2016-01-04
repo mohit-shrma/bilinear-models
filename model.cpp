@@ -183,3 +183,27 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
 }
 
 
+float Model::computeRMSE(gk_csr_t *mat, const Data& data) {
+  
+  int item;
+  float r_ui, r_ui_est, rmse = 0;
+  Eigen::VectorXf iFeat(nFeatures);
+  Eigen::VectorXf uFeat(nFeatures);
+  int nnz = 0;
+
+  for (int u = 0; u < mat->nrows; u++) {
+    uFeat = data.uFeatAcuum.row(u);
+    for (int ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
+      item = mat->rowind[ii];
+      extractFeat(data.itemFeatMat, item, iFeat);
+      r_ui = mat->rowval[ii];
+      r_ui_est = (uFeat - iFeat).transpose()*W*iFeat;
+      rmse += (r_ui - r_ui_est)*(r_ui - r_ui_est);
+      nnz++;
+    }
+  }
+  
+  rmse = sqrt(rmse/nnz);
+  return rmse;
+}
+
