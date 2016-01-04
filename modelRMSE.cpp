@@ -156,8 +156,7 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
       std::cout << std::endl << "Iter: " << iter << " obj: " << prevObj
         << " best iter: " << bestIter << " best obj: " << bestObj 
         << " val recall: " << valRecall << " W norm: " << W.norm();
-      std::cout << "\nTrain RMSE: " 
-        << bestModel.computeRMSE(data.trainMat, data);
+      std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data);
     }
 
   }

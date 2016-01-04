@@ -124,12 +124,14 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
     } 
     
     //TODO:nuclear norm projection on each triplet or after all sub-iters
-    //performNucNormProj(W, nucReg);
+    performNucNormProj(W, nucReg);
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {
-      isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
-          prevRecall);
+      if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
+          prevRecall)) {
+        break;
+      }
       std::cout << "\niter: " << iter << " val recall: " << prevRecall
         << " best recall: " << bestRecall;
     }

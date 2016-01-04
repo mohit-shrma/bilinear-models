@@ -35,7 +35,7 @@ bool Model::isTerminateModel(Model& bestModel, const Data& data, int iter,
       bestIter = iter;
     }
     
-    if (iter - bestIter >= 500) {
+    if (iter - bestIter >= CHANCE_ITER) {
       std::cout << "\nNOT CONVERGED: bestIter: " << bestIter << 
         " bestRecall: " << bestRecall << " currIter: " << iter << 
         " currRecall: " << currRecall << std::endl;
@@ -76,7 +76,7 @@ bool Model::isTerminateModelObj(Model& bestModel, const Data& data, int iter,
       bestIter = iter;
     }
     
-    if (iter - bestIter >= 10) {
+    if (iter - bestIter >= CHANCE_ITER) {
       std::cout << "\nNOT CONVERGED: bestIter: " << bestIter << 
         " bestObj: " << bestObj << " currIter: " << iter << 
         " currObj: " << currObj << std::endl;

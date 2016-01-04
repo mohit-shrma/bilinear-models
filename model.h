@@ -39,7 +39,6 @@ class Model {
     float computeRMSE(gk_csr_t *mat, const Data& data);
     bool isTerminateModel(Model& bestModel, const Data& data, int iter,
       int& bestIter, float& bestRecall, float& prevRecall); 
-
     bool isTerminateModelObj(Model& bestModel, const Data& data, int iter,
       int& bestIter, float& bestObj, float& prevObj);
 
