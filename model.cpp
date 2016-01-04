@@ -76,7 +76,7 @@ bool Model::isTerminateModelObj(Model& bestModel, const Data& data, int iter,
       bestIter = iter;
     }
     
-    if (iter - bestIter >= 500) {
+    if (iter - bestIter >= 10) {
       std::cout << "\nNOT CONVERGED: bestIter: " << bestIter << 
         " bestObj: " << bestObj << " currIter: " << iter << 
         " currObj: " << currObj << std::endl;
@@ -124,7 +124,7 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
     }
   } 
   
-  std::cout << "\nRelevant users with test items: " << nRelevantUsers;
+  //std::cout << "\nRelevant users with test items: " << nRelevantUsers;
 
   auto comparePair = [](std::pair<int, float> a, std::pair<int, float> b) { 
     return a.second > b.second; 

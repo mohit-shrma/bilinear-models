@@ -12,6 +12,8 @@ class ModelRMSE: public Model {
     virtual float objective(const Data& data);
     void computeGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
         Eigen::MatrixXf& Wgrad, float r_ui);
+    void gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
+        Eigen::MatrixXf& Wgrad, float r_ui);
 };
 
 #endif

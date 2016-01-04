@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   cosineModel.W = Eigen::MatrixXf::Identity(data.nFeatures, data.nFeatures);
   float baseRecall = cosineModel.computeRecall(data.testMat, data, 10, 
       data.testItems);
-  std::cout << "\nTest recall: " << baseRecall << std::endl;
+  std::cout << "\nTest baseline recall: " << baseRecall << std::endl;
   
   Model bestModel(params, data.nFeatures);
   //create bpr model
