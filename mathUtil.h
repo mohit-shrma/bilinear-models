@@ -5,5 +5,6 @@
 #include <iostream>
 
 void performNucNormProj(Eigen::MatrixXf& W, float gamma);
+float sigmoid(float x);
 
 #endif

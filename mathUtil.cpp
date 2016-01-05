@@ -1,5 +1,9 @@
 #include "mathUtil.h"
 
+float sigmoid(float x) {
+  return 1.0/(1.0 + exp(-x));
+}
+
 
 /*
  * Try to solve nuclear-norm regularization problem:

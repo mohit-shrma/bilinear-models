@@ -4,6 +4,7 @@
 #include "model.h"
 #include "mathUtil.h"
 #include <array>
+#include <cmath>
 
 class ModelBPR: public Model {
   
@@ -12,7 +13,9 @@ class ModelBPR: public Model {
     virtual void train(const Data &data, Model& bestModel);
     std::array<int, 3> sampleTriplet(const Data &data); 
     void computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
-        Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad);
+      Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad);
+    void gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
+      Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad);
 };
 
 
