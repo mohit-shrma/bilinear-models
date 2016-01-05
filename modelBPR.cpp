@@ -88,9 +88,16 @@ void ModelBPR::computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
   expCoeff = 1.0/(1.0 + exp(r_uij));  
    
   //reset Wgrad to gradient of l2 reg
-  Wgrad = 2.0*l2Reg*W;
-  Wgrad -= expCoeff*((uFeat - iFeat)*iFeat.transpose()
+  if (r_uij < 0) {
+    //need to update W as j has higher preference
+    Wgrad = 2.0*l2Reg*W;
+    Wgrad -= expCoeff*((uFeat - iFeat)*iFeat.transpose()
                       - uFeat*jFeat.transpose());
+  } else {
+    //no need to update as i has higher preference
+    Wgrad.fill(0);
+  }
+
 }
 
 
@@ -103,11 +110,16 @@ void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
   r_ui  = (uFeat - iFeat).transpose()*W*iFeat;
   r_uj  = uFeat.transpose()*W*jFeat;
   r_uij = r_ui - r_uj;
+
+  if (r_uij > 0 ) {
+    return;
+  }
+
   expCoeff = 1.0/(1.0 + exp(r_uij));  
    
   //reset Wgrad to gradient of l2 reg
-  Wgrad = 2.0*l2Reg*W;
-  Wgrad -= expCoeff*((uFeat - iFeat)*iFeat.transpose()
+  //Wgrad = 2.0*l2Reg*W;
+  Wgrad = -expCoeff*((uFeat - iFeat)*iFeat.transpose()
                       - uFeat*jFeat.transpose());
   //perturbation matrix
   auto perturbMat = Eigen::MatrixXf::Constant(W.rows(), W.cols(), 0.0001);
@@ -117,31 +129,35 @@ void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
   r_ui = (uFeat - iFeat).transpose()*noisyW1*iFeat;
   r_uj = uFeat.transpose()*noisyW1*jFeat;
   w_norm = noisyW1.norm(); 
-  lossRight = -log(sigmoid(r_ui - r_uj)) + l2Reg*w_norm*w_norm;
-
+  lossRight = -log(sigmoid(r_ui - r_uj));// + l2Reg*w_norm*w_norm;
 
   //perturb W with -E and compute loss
   auto noisyW2 = W - perturbMat; 
   r_ui = (uFeat - iFeat).transpose()*noisyW2*iFeat;
   r_uj = uFeat.transpose()*noisyW2*jFeat;
   w_norm = noisyW2.norm();
-  lossLeft = -log(sigmoid(r_ui - r_uj)) + l2Reg*w_norm*w_norm;
+  lossLeft = -log(sigmoid(r_ui - r_uj));// + l2Reg*w_norm*w_norm;
 
   //compute gradient and E dotprod
   gradE = 2.0*(Wgrad.cwiseProduct(perturbMat).sum());
 
-  if (fabs(lossRight - lossLeft - gradE) > 0.01) {
+  if (fabs(lossRight - lossLeft - gradE) > 0.001) {
     std::cout << "\nlr: " << lossRight << " ll: " << lossLeft 
       << " gradE: " << gradE  
       << " lr-ll: " << lossRight-lossLeft 
       << "\n(lr-ll)/gradE: " << (lossRight-lossLeft)/gradE  
-      << " lr-ll-gradE: " << lossRight-lossLeft-gradE << std::endl;
+      << " lr-ll-gradE: " << lossRight-lossLeft-gradE
+      << " uFeatNorm: " << uFeat.norm()
+      << " iFeatNorm: " << iFeat.norm() << " jFeatNorm: " << jFeat.norm()
+      << std::endl;
   }
   
 }
 
 
 void ModelBPR::train(const Data &data, Model& bestModel) {
+
+  std::cout << "\nModelBPR::train" << std::endl;
 
   int bestIter;
   Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
@@ -150,7 +166,6 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   Eigen::VectorXf uFeat(nFeatures);
   float bestRecall, prevRecall;
   int trainNNZ = getNNZ(data.trainMat); 
-  
   std::array<int, 3> triplet;
   
   for (int iter = 0; iter < maxIter; iter++) {
@@ -163,7 +178,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       extractFeat(data.itemFeatMat, triplet[2], jFeat);
       
       //compute gradient
-      gradCheck(uFeat, iFeat, jFeat, Wgrad); 
+      //gradCheck(uFeat, iFeat, jFeat, Wgrad); 
       computeBPRGrad(uFeat, iFeat, jFeat, Wgrad);
 
       //update W
@@ -184,6 +199,8 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
     }
   
   }
+  
+  std::cout << "\nW norm: " << bestModel.W.norm();
 
 }
 
