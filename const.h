@@ -4,5 +4,6 @@
 #define OBJ_ITER 1
 #define CHANCE_ITER 10
 #define EPS 0.00001
+#define NTHREADS 2
 
 #endif

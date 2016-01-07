@@ -5,6 +5,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <cmath>
+#include <thread>
 #include "const.h"
 #include "datastruct.h"
 #include "model.h"
@@ -36,11 +37,16 @@ class Model {
     
     float computeRecall(gk_csr_t *mat, const Data &data, int N, 
         std::unordered_set<int> items);
+    float computeRecallPar(gk_csr_t *mat, const Data &data, int N, 
+        std::unordered_set<int> items);
     float computeRMSE(gk_csr_t *mat, const Data& data);
     bool isTerminateModel(Model& bestModel, const Data& data, int iter,
       int& bestIter, float& bestRecall, float& prevRecall); 
     bool isTerminateModelObj(Model& bestModel, const Data& data, int iter,
       int& bestIter, float& bestObj, float& prevObj);
+    void computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd, 
+      const Data& data, int N, std::unordered_set<int>& items, 
+      std::vector<bool>& isTestUser, std::vector<float>& uRecalls);
 
 };
 

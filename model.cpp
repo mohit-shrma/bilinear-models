@@ -45,7 +45,8 @@ bool Model::isTerminateModel(Model& bestModel, const Data& data, int iter,
     if (fabs(prevRecall - currRecall) < EPS) {
       //convergence
       std::cout << "\nConverged in iteration: " << iter << " prevRecall: "
-        << prevRecall << " currRecall: " << currRecall;
+        << prevRecall << " currRecall: " << currRecall << " W norm: "
+        << W.norm();
       ret = true;
     }
 
@@ -178,6 +179,143 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
   }
   
   recall = recall/nRelevantUsers;
+  
+  return recall;
+}
+
+
+//compute recall from uStart(inclusive) to uEnd(exclusive), store results in
+//uRecalls
+void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd, 
+    const Data& data, int N, std::unordered_set<int>& items, 
+    std::vector<bool>& isTestUser, std::vector<float>& uRecalls) {
+  
+  Eigen::VectorXf iFeat(nFeatures);
+  auto comparePair = [](std::pair<int, float> a, std::pair<int, float> b) { 
+    return a.second > b.second; 
+  };
+  float rating;
+  std::unordered_set<int> topNitems;
+  std::vector<std::pair<int, float>> itemRatings;
+  itemRatings.reserve(items.size());
+  int nItemsInTopN, nTestUserItems, testItem;
+  float recall_u;
+
+  for (int u = uStart; u < uEnd; u++) {
+    
+    if (!isTestUser[u]) {
+      uRecalls[u] = -1;
+      continue;
+    }
+    
+    //compute ratings over all testItems
+    for (const int &item: items) {
+      extractFeat(data.itemFeatMat, item, iFeat);
+      rating = data.uFeatAcuum.row(u)*W*iFeat;
+      itemRatings.push_back(std::make_pair(item, rating));
+    }
+
+    //put top-N item ratings pair in begining
+    std::nth_element(itemRatings.begin(), itemRatings.begin()+N,
+        itemRatings.end(), comparePair); 
+
+    //get the set of top-N items for the user
+    topNitems.clear();
+    for (int i = 0; i < N; i++) {
+      topNitems.insert(itemRatings[i].first);
+    }
+    
+    nItemsInTopN = 0;
+    nTestUserItems = 0;
+    for (int ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
+      testItem = mat->rowind[ii];
+      nTestUserItems++;
+      if (topNitems.find(testItem) != topNitems.end()) {
+        //found test item
+        nItemsInTopN++;
+      }
+    }
+
+    if (nTestUserItems > N) {
+      recall_u = (float)nItemsInTopN/(float)N;
+    } else {
+      recall_u = (float)nItemsInTopN/(float)nTestUserItems;
+    }
+
+    uRecalls[u] = recall_u;
+
+  }
+
+   
+}
+
+
+
+float Model::computeRecallPar(gk_csr_t *mat, const Data &data, int N, 
+    std::unordered_set<int> items) {
+
+  int u, i, ii;
+  int nRelevantUsers;
+  Eigen::VectorXf iFeat(nFeatures);
+  
+
+  //find whether users have items in test set
+  std::vector<bool> isTestUser(mat->nrows, false);
+  nRelevantUsers = 0;
+  for (u = 0; u < mat->nrows; u++) {
+    for (ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
+      if (mat->rowval[ii] > 0) {
+        isTestUser[u] = true;
+        nRelevantUsers++;
+        break;
+      }
+    }
+  } 
+  
+  unsigned long const hwThreads = std::thread::hardware_concurrency();
+  //unsigned long const nThreads = std::min(hwThreads != 0? hwThreads:2, NTHREADS);
+ 
+  std::cout << "\nhwThreads: " << hwThreads;
+  int nThreads = NTHREADS;
+  if (hwThreads > 0  && hwThreads < NTHREADS) {
+    nThreads = hwThreads;
+  }
+  std::cout << "\nnthreads: " << nThreads;
+
+  //allocate threads
+  std::vector<std::thread> threads(nThreads-1);
+  
+  //storage for results from threads
+  std::vector<float> uRecalls(mat->nrows);
+
+  int nUsersPerThread = mat->nrows / nThreads;
+  
+  for (u = 0, i = 0; u < mat->nrows; u+=nUsersPerThread) {
+    if (u < mat->nrows-nUsersPerThread) {
+      threads[i++] = std::thread(&Model::computeRecallUsers, this, mat, u, 
+          u+nUsersPerThread,
+          std::ref(data), N, std::ref(items), std::ref(isTestUser), 
+          std::ref(uRecalls));
+    } else {
+      //in main thread
+      computeRecallUsers(mat, u, mat->nrows, data, N, items, isTestUser, 
+          uRecalls);
+    }
+  }
+  //wait for threads to finish
+  std::for_each(threads.begin(), threads.end(), 
+      std::mem_fn(&std::thread::join));
+
+  std::cout << "\nRelevant users with test items: " << nRelevantUsers;
+
+  //compute recall
+  float recall = 0;
+  for (u = 0; u < mat->nrows; u++) {
+    if (uRecalls[u] >= 0) {
+      recall += uRecalls[u];
+    }
+  }
+  recall = recall/mat->nrows;
   
   return recall;
 }
