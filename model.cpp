@@ -132,6 +132,7 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
   };
   std::unordered_set<int> topNitems;
   std::vector<std::pair<int, float>> itemRatings;
+  std::vector<float> uRecalls(mat->nrows);
   itemRatings.reserve(items.size());
   int nItemsInTopN, nTestUserItems, testItem;
   float recall, recall_u;
@@ -139,6 +140,7 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
   //compute ratings for each user on all test items and get top-N items
   for (u = 0; u < mat->nrows; u++) {
     if (!isTestUser[u]) {
+      uRecalls[u] = -1;
       continue;
     }
     //compute ratings over all testItems
@@ -174,10 +176,12 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
     } else {
       recall_u = (float)nItemsInTopN/(float)nTestUserItems;
     }
+    
+    uRecalls[u] = recall_u;
 
     recall += recall_u;
   }
-  
+  writeFVec(uRecalls, "ser_recall.txt"); 
   recall = recall/nRelevantUsers;
   
   return recall;
@@ -308,6 +312,7 @@ float Model::computeRecallPar(gk_csr_t *mat, const Data &data, int N,
 
   std::cout << "\nRelevant users with test items: " << nRelevantUsers;
 
+  writeFVec(uRecalls, "par_recall.txt"); 
   //compute recall
   float recall = 0;
   for (u = 0; u < mat->nrows; u++) {

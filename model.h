@@ -10,7 +10,7 @@
 #include "datastruct.h"
 #include "model.h"
 #include "GKlib.h"
-
+#include "io.h"
 
 class Model {
   
