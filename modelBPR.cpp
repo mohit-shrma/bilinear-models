@@ -85,19 +85,16 @@ void ModelBPR::computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
   r_ui  = (uFeat - iFeat).transpose()*W*iFeat;
   r_uj  = uFeat.transpose()*W*jFeat;
   r_uij = r_ui - r_uj;
-  expCoeff = 1.0/(1.0 + exp(r_uij));  
    
+  Wgrad.fill(0);
   //reset Wgrad to gradient of l2 reg
   if (r_uij < 0) {
+    expCoeff = 1.0/(1.0 + exp(r_uij));  
     //need to update W as j has higher preference
     Wgrad = 2.0*l2Reg*W;
     Wgrad -= expCoeff*((uFeat - iFeat)*iFeat.transpose()
                       - uFeat*jFeat.transpose());
-  } else {
-    //no need to update as i has higher preference
-    Wgrad.fill(0);
-  }
-
+  } 
 }
 
 
@@ -111,27 +108,27 @@ void ModelBPR::computeBPRSparseGrad(int u, int i, int j,
   r_uj  = estNegRating(u, j, data, pdt);
   r_uij = r_ui - r_uj;
    
-  //reset Wgrad to gradient of l2 reg
+  Wgrad.fill(0);
   if (r_uij < 0) {
-    expCoeff = 1.0/(1.0 + exp(r_uij));  
     //need to update W as j has higher preference
-    Wgrad = 2.0*l2Reg*W;
+    expCoeff = 1.0/(1.0 + exp(r_uij));  
  
     //-expCoeff*f_u*f_i^T
     updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, i, 
-        -1*expCoeff);
+        -1);
 
     //expCoeff*f_u*f_j^T
     updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, j, 
-        expCoeff);
+        1);
 
     //expCoeff*f_i*f_i^T
     updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, i, data.itemFeatMat, i, 
-        expCoeff);
-
-  } else {
-    //no need to update as i has higher preference
-    Wgrad.fill(0);
+        1);
+    
+    Wgrad *= expCoeff;
+    
+    //add Wgrad to gradient of l2 reg
+    Wgrad += 2.0*l2Reg*W;
   }
 
 }
@@ -200,6 +197,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf jFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
+  Eigen::VectorXf pdt(nFeatures);
   float bestRecall, prevRecall;
   int trainNNZ = getNNZ(data.trainMat); 
   std::array<int, 3> triplet;
@@ -218,6 +216,8 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       //compute gradient
       //gradCheck(uFeat, iFeat, jFeat, Wgrad); 
       computeBPRGrad(uFeat, iFeat, jFeat, Wgrad);
+      //computeBPRSparseGrad(triplet[0], triplet[1], triplet[2], Wgrad, pdt, 
+      //    data);
 
       //update W
       W -= learnRate*Wgrad;

@@ -178,9 +178,10 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
     for (const int &item: items) {
       //extractFeat(data.itemFeatMat, item, iFeat);
       //rating = data.uFeatAcuum.row(u)*W*iFeat;
-      matSpVecPdt(W, data.itemFeatMat, item, pdt);
       //rating = pdt.dot(data.uFeatAcuum.row(u));
-      rating = vecSpVecDot(pdt, data.uFAccumMat, u);
+      //matSpVecPdt(W, data.itemFeatMat, item, pdt);
+      //rating = vecSpVecDot(pdt, data.uFAccumMat, u);
+      rating = estNegRating(u, item, data,pdt);
       itemRatings.push_back(std::make_pair(item, rating));
     }
     
@@ -210,10 +211,12 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
     } else {
       recall_u = (float)nItemsInTopN/(float)nTestUserItems;
     }
-      
+     
+    /*
     if (0 == u%500) {
       std::cout << "\nu = " << u  << " " << recall_u << std::endl;
     }
+    */
 
     uRecalls[u] = recall_u;
 
