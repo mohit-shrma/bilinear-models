@@ -101,6 +101,42 @@ void ModelBPR::computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
 }
 
 
+//TODO:verify
+void ModelBPR::computeBPRSparseGrad(int u, int i, int j, 
+    Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data) {
+  
+  float r_ui, r_uj, r_uij, expCoeff;
+   
+  r_ui  = estPosRating(u, i, data, pdt);
+  r_uj  = estNegRating(u, j, data, pdt);
+  r_uij = r_ui - r_uj;
+   
+  //reset Wgrad to gradient of l2 reg
+  if (r_uij < 0) {
+    expCoeff = 1.0/(1.0 + exp(r_uij));  
+    //need to update W as j has higher preference
+    Wgrad = 2.0*l2Reg*W;
+ 
+    //-expCoeff*f_u*f_i^T
+    updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, i, 
+        -1*expCoeff);
+
+    //expCoeff*f_u*f_j^T
+    updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, j, 
+        expCoeff);
+
+    //expCoeff*f_i*f_i^T
+    updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, i, data.itemFeatMat, i, 
+        expCoeff);
+
+  } else {
+    //no need to update as i has higher preference
+    Wgrad.fill(0);
+  }
+
+}
+
+
 void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
     Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad) {
   

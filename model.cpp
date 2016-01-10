@@ -1,5 +1,35 @@
 #include "model.h"
 
+//estimate rating on a positively rated item
+float Model::estPosRating(int u, int item, const Data& data,
+    Eigen::VectorXf& pdt) {
+  float r_ui = 0;
+  pdt.fill(0);
+
+  //compute dot product of mat and sparse vector 
+  matSpVecPdt(W, data.itemFeatMat, item, pdt);
+  //f_u^TWf_i 
+  r_ui = vecSpVecDot(pdt, data.uFAccumMat, u);
+  //-f_i^TWf_i
+  r_ui -= vecSpVecDot(pdt, data.itemFeatMat, item);
+
+  return r_ui; 
+} 
+
+
+//estimate rating on a item not rated before
+float Model::estNegRating(int u, int item, const Data& data, 
+    Eigen::VectorXf& pdt) {
+  float r_ui = 0;
+  pdt.fill(0);
+
+  //compute dot product of mat and sparse vector 
+  matSpVecPdt(W, data.itemFeatMat, item, pdt);
+  r_ui = vecSpVecDot(pdt, data.uFAccumMat, u);
+ 
+  return r_ui;
+}
+
 
 Model::Model(const Params &params, int p_nFeatures) {
   nFeatures = p_nFeatures;

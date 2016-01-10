@@ -37,6 +37,10 @@ class Model {
       std::cerr << "\nTraining not in base class";
     };
     
+    float estPosRating(int u, int item, const Data& data,
+      Eigen::VectorXf& pdt);
+    float estNegRating(int u, int item, const Data& data, 
+      Eigen::VectorXf& pdt);
     float computeRecall(gk_csr_t *mat, const Data &data, int N, 
         std::unordered_set<int> items);
     float computeRecallPar(gk_csr_t *mat, const Data &data, int N, 

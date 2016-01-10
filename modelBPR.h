@@ -14,6 +14,8 @@ class ModelBPR: public Model {
     std::array<int, 3> sampleTriplet(const Data &data); 
     void computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
       Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad);
+    void computeBPRSparseGrad(int u, int i, int j, 
+      Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data);
     void gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
       Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad);
 };
