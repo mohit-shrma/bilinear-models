@@ -6,6 +6,7 @@
 #include <vector>
 #include <cmath>
 #include <thread>
+#include "mathUtil.h"
 #include "const.h"
 #include "datastruct.h"
 #include "model.h"
@@ -21,6 +22,7 @@ class Model {
     float l2Reg;
     float nucReg;
     float learnRate;
+    float pcSamples;
     int rank;
     int maxIter;
     

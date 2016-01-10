@@ -8,7 +8,7 @@ Model::Model(const Params &params, int p_nFeatures) {
   learnRate = params.learnRate;
   rank      = params.rank;
   maxIter   = params.maxIter;
-  
+  pcSamples = params.pcSamples; 
   //initialize model matrix
   W = Eigen::MatrixXf::Zero(nFeatures, nFeatures);
   for (int i = 0; i < nFeatures; i++) {
@@ -111,6 +111,7 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
   int nRelevantUsers;
   float rating;
   Eigen::VectorXf iFeat(nFeatures);
+  Eigen::VectorXf pdt(nFeatures);
 
   //find whether users have items in test set
   std::vector<bool> isTestUser(mat->nrows, false);
@@ -145,8 +146,11 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
     }
     //compute ratings over all testItems
     for (const int &item: items) {
-      extractFeat(data.itemFeatMat, item, iFeat);
-      rating = data.uFeatAcuum.row(u)*W*iFeat;
+      //extractFeat(data.itemFeatMat, item, iFeat);
+      //rating = data.uFeatAcuum.row(u)*W*iFeat;
+      matSpVecPdt(W, data.itemFeatMat, item, pdt);
+      //rating = pdt.dot(data.uFeatAcuum.row(u));
+      rating = vecSpVecDot(pdt, data.uFAccumMat, u);
       itemRatings.push_back(std::make_pair(item, rating));
     }
     
@@ -176,7 +180,11 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
     } else {
       recall_u = (float)nItemsInTopN/(float)nTestUserItems;
     }
-    
+      
+    if (0 == u%500) {
+      std::cout << "\nu = " << u  << " " << recall_u << std::endl;
+    }
+
     uRecalls[u] = recall_u;
 
     recall += recall_u;

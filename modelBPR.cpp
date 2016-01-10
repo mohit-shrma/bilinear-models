@@ -167,9 +167,11 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   float bestRecall, prevRecall;
   int trainNNZ = getNNZ(data.trainMat); 
   std::array<int, 3> triplet;
-  
+ 
+  std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
+
   for (int iter = 0; iter < maxIter; iter++) {
-    for (int subIter = 0; subIter < trainNNZ; subIter++) {
+    for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
         
       //sample triplet
       triplet = sampleTriplet(data);
@@ -186,7 +188,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
     } 
     
     //TODO:nuclear norm projection on each triplet or after all sub-iters
-    performNucNormProj(W, nucReg);
+    performNucNormProjSVDLib(W, rank);
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {
@@ -195,7 +197,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
         break;
       }
       std::cout << "\niter: " << iter << " val recall: " << prevRecall
-        << " best recall: " << bestRecall;
+        << " best recall: " << bestRecall << std::endl;
     }
   
   }

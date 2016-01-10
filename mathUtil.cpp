@@ -79,11 +79,69 @@ void performNucNormProjSVDLib(Eigen::MatrixXf& W, int rank) {
 
 
 
-  //free dW
+  //free 
   svdFreeDMat(dW);
   svdFreeSMat(sW);
   svdFreeSVDRec(svd);
 }
 
 
+float vecSpVecDot(Eigen::VectorXf& vec, gk_csr_t *mat, int row) {
+  float dotp = 0;
+  int colInd;
+  for (int ii = mat->rowptr[row]; ii < mat->rowptr[row+1]; ii++) {
+    colInd = mat->rowind[ii];
+    dotp += mat->rowval[ii]*vec[colInd];
+  }
+  return dotp;
+}
+
+//TODO: verify correctness
+void matSpVecPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
+    Eigen::VectorXf& pdt) {
+  
+  int colInd;
+  float val;
+  
+  if (mat->ncols != W.cols()) {
+    std::cerr << "\ndimensions dont match" << std::endl;
+  }
+
+  pdt.fill(0);
+  //parse sparse vector
+  for (int ii = mat->rowptr[row]; ii < mat->rowptr[row+1]; ii++) {
+    colInd = mat->rowind[ii];
+    val = mat->rowval[ii];
+    //TODO: verify below
+    for (int k = 0; k < W.rows(); k++) {
+      pdt[k] += W(k, colInd)*val;
+    } 
+  }
+
+}
+
+
+//TODO: verify
+void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
+    Eigen::VectorXf& pdt) {
+  
+  int colInd;
+  float val;
+  
+  if (mat->ncols != W.rows()) {
+    std::cerr << "\ndimensions dont match" << std::endl;
+  }
+
+  pdt.fill(0);
+  //parse sparse vector
+  for (int k = 0; k < W.rows(); k++) {
+    for (int ii = mat->rowptr[row]; ii < mat->rowptr[row+1]; ii++) {
+      colInd = mat->rowind[ii];
+      val = mat->rowval[ii];
+      //TODO: verify below
+        pdt[k] += W(colInd, k)*val;
+    }
+  }
+
+}
 

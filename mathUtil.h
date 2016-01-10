@@ -3,14 +3,18 @@
 
 #include <Eigen/Dense>
 #include <iostream>
-
+#include "GKlib.h"
 extern "C" {
   #include "svdlib.h"
 }
 
-
+float vecSpVecDot(Eigen::VectorXf& vec, gk_csr_t *mat, int row);
 void performNucNormProj(Eigen::MatrixXf& W, float gamma);
 void performNucNormProjSVDLib(Eigen::MatrixXf& W, int rank);
 float sigmoid(float x);
+void matSpVecPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
+    Eigen::VectorXf& pdt);
+void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
+    Eigen::VectorXf& pdt);
 
 #endif

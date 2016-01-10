@@ -2,6 +2,7 @@
 #define _DATA_STRUCT_H_
 
 #include <iostream>
+#include <fstream>
 #include <unordered_set>
 #include "util.h"
 #include "GKlib.h"
@@ -62,12 +63,26 @@ class Data {
     gk_csr_t *testMat;
     gk_csr_t *valMat;
     gk_csr_t *itemFeatMat;
-     
+    gk_csr_t *uFAccumMat;
+
     Eigen::MatrixXf uFeatAcuum; 
     std::unordered_set<int> testItems;
     std::unordered_set<int> valItems;
     std::unordered_set<int> trainItems;
     std::unordered_set<int> posTrainUsers;
+
+    void printDetails() {
+      std::cout << "\ntrain nrows: " << trainMat->nrows << " ncols: "  
+        << trainMat->ncols;
+      std::cout << "\ntest nrows: " << testMat->nrows << " ncols: "  
+        << testMat->ncols;
+      std::cout << "\nval nrows: " << valMat->nrows << " ncols: "  
+        << valMat->ncols;
+      std::cout << "\nitems: " << itemFeatMat->nrows << " nFeat: " << itemFeatMat->ncols;
+      std::cout << "\nnTestItems: " << testItems.size();
+      std::cout << "\nnValItems: " << valItems.size();
+      std::cout << "\ntrainItems: " << trainItems.size() << std::endl;
+    }
 
     Data(const Params& params) {
       trainMat = NULL;
@@ -105,23 +120,44 @@ class Data {
       }
       
       uFeatAcuum = Eigen::MatrixXf::Zero(nUsers, nFeatures);
-      //accumulate all user features
-      for (int u = 0; u < nUsers; u++) {
-        for (int ii = trainMat->rowptr[u]; ii < trainMat->rowptr[u+1];
-              ii++) {
-          int itemInd = trainMat->rowind[ii];
-          for (int k = itemFeatMat->rowptr[itemInd];
-               k < itemFeatMat->rowptr[itemInd+1]; k++) {
-            //NOTE: multiplying by rating to make sure explicit '0' excluded
-            uFeatAcuum(u, itemFeatMat->rowind[k]) += trainMat->rowval[u]*itemFeatMat->rowval[k];
+      int tempNNZ = 0;
+      std::ofstream opMat("featAccu.mat");
+      if (opMat.is_open()) {
+        //accumulate all user features
+        for (int u = 0; u < nUsers; u++) {
+          for (int ii = trainMat->rowptr[u]; ii < trainMat->rowptr[u+1];
+                ii++) {
+            int itemInd = trainMat->rowind[ii];
+            for (int k = itemFeatMat->rowptr[itemInd];
+                 k < itemFeatMat->rowptr[itemInd+1]; k++) {
+              //NOTE: multiplying by rating to make sure explicit '0' excluded
+              uFeatAcuum(u, itemFeatMat->rowind[k]) += trainMat->rowval[u]*itemFeatMat->rowval[k];
+            }
           }
+          
+          for (int k = 0; k < nFeatures; k++) {
+            if (uFeatAcuum(u,k) > 0) {
+              opMat << k+1 << " " << uFeatAcuum(u, k) << " ";
+              tempNNZ++;
+            }
+          }
+
+          opMat << std::endl;
         }
+
+        std::cout << "\nuFeatAccum NNZ: " << tempNNZ <<  " density: "
+          << (float)tempNNZ/float(nUsers*nFeatures)  << std::endl;
+
+        uFAccumMat = gk_csr_Read("featAccu.mat", GK_CSR_FMT_CSR, 1, 1);
+        gk_csr_CreateIndex(uFAccumMat, GK_CSR_COL);
+        std::cout << "\nnnz ufaccum: " << getNNZ(uFAccumMat);
       }
     
       testItems     = getItemSet(testMat);
       trainItems    = getItemSet(trainMat);
       valItems      = getItemSet(valMat);
       posTrainUsers = getPosUsers(trainMat);
+      printDetails();
     }
     
 
@@ -137,6 +173,9 @@ class Data {
       }
       if (itemFeatMat) {
         gk_csr_Free(&itemFeatMat);
+      }
+      if (uFAccumMat) {
+        gk_csr_Free(&uFAccumMat);
       }
       //TODO: make sure eigen matrix freed
     }

@@ -37,20 +37,21 @@ int main(int argc, char *argv[]) {
       data.testItems);
   std::cout << "\nTest baseline recall: " << baseRecall << std::endl;
  
-  float baseRecallPar = cosineModel.computeRecallPar(data.testMat, data, 10, 
-      data.testItems);
-  std::cout << "\nTest baseline recall par: " << baseRecallPar << std::endl;
+  //float baseRecallPar = cosineModel.computeRecallPar(data.testMat, data, 10, 
+  //    data.testItems);
+  //std::cout << "\nTest baseline recall par: " << baseRecallPar << std::endl;
   
-  /*
+  
   Model bestModel(params, data.nFeatures);
   //create bpr model
   ModelBPR bprModel(params, data.nFeatures);
-  bprModel.train(data, bestModel); 
+  //bprModel.train(data, bestModel); 
   
   //create rmse model
   //ModelRMSE rmseModel(params, data.nFeatures);
   //rmseModel.train(data, bestModel);
 
+  /*
   float recall = bestModel.computeRecall(data.testMat, data, 10, 
       data.testItems);
   std::cout << "\nTest recall: " << recall << std::endl;

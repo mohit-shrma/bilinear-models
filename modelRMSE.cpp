@@ -22,7 +22,8 @@ float ModelRMSE::objective(const Data& data) {
     w_norm = W.norm();
     uReg += l2Reg*w_norm*w_norm;
   }
-  
+ 
+  /*
   //compute thin svd
   Eigen::JacobiSVD<Eigen::MatrixXf> svd(W, 
       Eigen::ComputeThinU|Eigen::ComputeThinV);
@@ -31,7 +32,8 @@ float ModelRMSE::objective(const Data& data) {
     nucNorm += singVec[ii]; 
   }
   nucNormReg = nucNorm*nucReg;
-  
+  */
+
   obj += rmse + uReg + nucNormReg;
   
   return obj;
@@ -144,7 +146,8 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
     }
       
     //nuclear norm projection after all sub-iters
-    performNucNormProj(W, nucReg);
+    //performNucNormProj(W, nucReg);
+    performNucNormProjSVDLib(W, rank);
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {
@@ -155,8 +158,8 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
       }
       std::cout << std::endl << "Iter: " << iter << " obj: " << prevObj
         << " best iter: " << bestIter << " best obj: " << bestObj 
-        << " val recall: " << valRecall << " W norm: " << W.norm();
-      std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data);
+        << " val recall: " << valRecall << " W norm: " << W.norm() << std::endl;
+      std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
     }
 
   }
