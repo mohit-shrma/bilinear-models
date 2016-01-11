@@ -127,11 +127,12 @@ class Data {
         for (int u = 0; u < nUsers; u++) {
           for (int ii = trainMat->rowptr[u]; ii < trainMat->rowptr[u+1];
                 ii++) {
-            int itemInd = trainMat->rowind[ii];
-            for (int k = itemFeatMat->rowptr[itemInd];
-                 k < itemFeatMat->rowptr[itemInd+1]; k++) {
+            int item = trainMat->rowind[ii];
+            float itemRating = trainMat->rowval[ii];
+            for (int k = itemFeatMat->rowptr[item];
+                 k < itemFeatMat->rowptr[item+1]; k++) {
               //NOTE: multiplying by rating to make sure explicit '0' excluded
-              uFeatAcuum(u, itemFeatMat->rowind[k]) += trainMat->rowval[u]*itemFeatMat->rowval[k];
+              uFeatAcuum(u, itemFeatMat->rowind[k]) += itemRating*itemFeatMat->rowval[k];
             }
           }
           
