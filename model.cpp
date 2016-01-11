@@ -26,7 +26,7 @@ float Model::estNegRating(int u, int item, const Data& data,
   //compute dot product of mat and sparse vector 
   matSpVecPdt(W, data.itemFeatMat, item, pdt);
   r_ui = vecSpVecDot(pdt, data.uFAccumMat, u);
- 
+
   return r_ui;
 }
 
@@ -137,11 +137,9 @@ bool Model::isTerminateModelObj(Model& bestModel, const Data& data, int iter,
 float Model::computeRecall(gk_csr_t *mat, const Data &data, int N, 
     std::unordered_set<int> items) {
 
-  int u, i, ii;
+  int u, ii;
   int nRelevantUsers;
-  float rating;
-  Eigen::VectorXf iFeat(nFeatures);
-  Eigen::VectorXf pdt(nFeatures);
+  float recall;
 
   //find whether users have items in test set
   std::vector<bool> isTestUser(mat->nrows, false);
@@ -158,71 +156,16 @@ float Model::computeRecall(gk_csr_t *mat, const Data &data, int N,
   
   //std::cout << "\nRelevant users with test items: " << nRelevantUsers;
 
-  auto comparePair = [](std::pair<int, float> a, std::pair<int, float> b) { 
-    return a.second > b.second; 
-  };
-  std::unordered_set<int> topNitems;
-  std::vector<std::pair<int, float>> itemRatings;
   std::vector<float> uRecalls(mat->nrows);
-  itemRatings.reserve(items.size());
-  int nItemsInTopN, nTestUserItems, testItem;
-  float recall, recall_u;
-  recall = 0;
+  computeRecallUsers(mat, 0, mat->nrows, data, N, items, isTestUser, uRecalls);
   //compute ratings for each user on all test items and get top-N items
+  
+  recall = 0;
   for (u = 0; u < mat->nrows; u++) {
-    if (!isTestUser[u]) {
-      uRecalls[u] = -1;
-      continue;
+    if (uRecalls[u] >= 0) {
+      recall += uRecalls[u];
     }
-    //compute ratings over all testItems
-    for (const int &item: items) {
-      //extractFeat(data.itemFeatMat, item, iFeat);
-      //rating = data.uFeatAcuum.row(u)*W*iFeat;
-      //rating = pdt.dot(data.uFeatAcuum.row(u));
-      //matSpVecPdt(W, data.itemFeatMat, item, pdt);
-      //rating = vecSpVecDot(pdt, data.uFAccumMat, u);
-      rating = estNegRating(u, item, data,pdt);
-      itemRatings.push_back(std::make_pair(item, rating));
-    }
-    
-    //put top-N item ratings pair in begining
-    std::nth_element(itemRatings.begin(), itemRatings.begin()+N,
-        itemRatings.end(), comparePair); 
-    
-    //get the set of top-N items for the user
-    topNitems.clear();
-    for (i = 0; i < N; i++) {
-      topNitems.insert(itemRatings[i].first);
-    }
-    
-    nItemsInTopN = 0;
-    nTestUserItems = 0;
-    for (ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
-      testItem = mat->rowind[ii];
-      nTestUserItems++;
-      if (topNitems.find(testItem) != topNitems.end()) {
-        //found test item
-        nItemsInTopN++;
-      }
-    }
-
-    if (nTestUserItems > N) {
-      recall_u = (float)nItemsInTopN/(float)N;
-    } else {
-      recall_u = (float)nItemsInTopN/(float)nTestUserItems;
-    }
-     
-    /*
-    if (0 == u%500) {
-      std::cout << "\nu = " << u  << " " << recall_u << std::endl;
-    }
-    */
-
-    uRecalls[u] = recall_u;
-
-    recall += recall_u;
   }
-  writeFVec(uRecalls, "ser_recall.txt"); 
   recall = recall/nRelevantUsers;
   
   return recall;
@@ -247,6 +190,7 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
   int nItemsInTopN, nTestUserItems, testItem;
   float recall_u;
 
+
   for (int u = uStart; u < uEnd; u++) {
     
     if (!isTestUser[u]) {
@@ -255,6 +199,7 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
     }
     
     //compute ratings over all testItems
+    itemRatings.clear();
     for (const int &item: items) {
       //extractFeat(data.itemFeatMat, item, iFeat);
       //rating = data.uFeatAcuum.row(u)*W*iFeat;
@@ -271,7 +216,7 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
     for (int i = 0; i < N; i++) {
       topNitems.insert(itemRatings[i].first);
     }
-    
+
     nItemsInTopN = 0;
     nTestUserItems = 0;
     for (int ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
@@ -290,9 +235,7 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
     }
 
     uRecalls[u] = recall_u;
-
   }
-
    
 }
 
@@ -303,7 +246,6 @@ float Model::computeRecallPar(gk_csr_t *mat, const Data &data, int N,
   int u, i, ii;
   int nRelevantUsers;
   Eigen::VectorXf iFeat(nFeatures);
-  
 
   //find whether users have items in test set
   std::vector<bool> isTestUser(mat->nrows, false);
@@ -321,12 +263,12 @@ float Model::computeRecallPar(gk_csr_t *mat, const Data &data, int N,
   unsigned long const hwThreads = std::thread::hardware_concurrency();
   //unsigned long const nThreads = std::min(hwThreads != 0? hwThreads:2, NTHREADS);
  
-  std::cout << "\nhwThreads: " << hwThreads;
+  //std::cout << "\nhwThreads: " << hwThreads;
   int nThreads = NTHREADS;
   if (hwThreads > 0  && hwThreads < NTHREADS) {
     nThreads = hwThreads;
   }
-  std::cout << "\nnthreads: " << nThreads;
+  //std::cout << "\nnthreads: " << nThreads;
 
   //allocate threads
   std::vector<std::thread> threads(nThreads-1);
@@ -337,7 +279,8 @@ float Model::computeRecallPar(gk_csr_t *mat, const Data &data, int N,
   int nUsersPerThread = mat->nrows / nThreads;
   
   for (u = 0, i = 0; u < mat->nrows; u+=nUsersPerThread) {
-    if (u < mat->nrows-nUsersPerThread) {
+    if (i < nThreads-1) {
+      //start computation on thread
       threads[i++] = std::thread(&Model::computeRecallUsers, this, mat, u, 
           u+nUsersPerThread,
           std::ref(data), N, std::ref(items), std::ref(isTestUser), 
@@ -346,15 +289,16 @@ float Model::computeRecallPar(gk_csr_t *mat, const Data &data, int N,
       //in main thread
       computeRecallUsers(mat, u, mat->nrows, data, N, items, isTestUser, 
           uRecalls);
+      u = mat->nrows;
     }
   }
+  
   //wait for threads to finish
   std::for_each(threads.begin(), threads.end(), 
       std::mem_fn(&std::thread::join));
 
-  std::cout << "\nRelevant users with test items: " << nRelevantUsers;
+  //std::cout << "\nRelevant users with test items: " << nRelevantUsers;
 
-  writeFVec(uRecalls, "par_recall.txt"); 
   //compute recall
   float recall = 0;
   for (u = 0; u < mat->nrows; u++) {
@@ -362,7 +306,7 @@ float Model::computeRecallPar(gk_csr_t *mat, const Data &data, int N,
       recall += uRecalls[u];
     }
   }
-  recall = recall/mat->nrows;
+  recall = recall/nRelevantUsers;
   
   return recall;
 }
