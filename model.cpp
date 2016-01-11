@@ -236,6 +236,7 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
     std::vector<bool>& isTestUser, std::vector<float>& uRecalls) {
   
   Eigen::VectorXf iFeat(nFeatures);
+  Eigen::VectorXf pdt(nFeatures);
   auto comparePair = [](std::pair<int, float> a, std::pair<int, float> b) { 
     return a.second > b.second; 
   };
@@ -255,8 +256,9 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
     
     //compute ratings over all testItems
     for (const int &item: items) {
-      extractFeat(data.itemFeatMat, item, iFeat);
-      rating = data.uFeatAcuum.row(u)*W*iFeat;
+      //extractFeat(data.itemFeatMat, item, iFeat);
+      //rating = data.uFeatAcuum.row(u)*W*iFeat;
+      rating = estNegRating(u, item, data, pdt);
       itemRatings.push_back(std::make_pair(item, rating));
     }
 
@@ -293,7 +295,6 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
 
    
 }
-
 
 
 float Model::computeRecallPar(gk_csr_t *mat, const Data &data, int N, 
