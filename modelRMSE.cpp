@@ -7,6 +7,7 @@ float ModelRMSE::objective(const Data& data) {
   float r_ui, r_ui_est, w_norm;
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
+  Eigen::VectorXf pdt(nFeatures);
   float rmse = 0, uReg = 0, nucNormReg = 0, nucNorm = 0, obj = 0;
 
   for (u = 0; u < data.trainMat->nrows; u++) {
@@ -14,8 +15,9 @@ float ModelRMSE::objective(const Data& data) {
     for (ii = data.trainMat->rowptr[u]; 
         ii < data.trainMat->rowptr[u+1]; ii++) {
       item = data.trainMat->rowind[ii];
-      extractFeat(data.itemFeatMat, item, iFeat);
-      r_ui_est = (uFeat - iFeat).transpose()*W*iFeat;
+      //extractFeat(data.itemFeatMat, item, iFeat);
+      //r_ui_est = (uFeat - iFeat).transpose()*W*iFeat;
+      r_ui_est = estPosRating(u, item, data, pdt);
       r_ui = data.trainMat->rowval[ii];
       rmse += (r_ui_est - r_ui)*(r_ui_est-r_ui);
     }
@@ -40,7 +42,7 @@ float ModelRMSE::objective(const Data& data) {
 }
 
 
-void ModelRMSE::computeGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, Eigen::MatrixXf& Wgrad, float r_ui) {
+void ModelRMSE::computeRMSEGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, Eigen::MatrixXf& Wgrad, float r_ui) {
   float r_ui_est;
   
   r_ui_est  = (uFeat - iFeat).transpose()*W*iFeat;
@@ -52,6 +54,29 @@ void ModelRMSE::computeGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, Eige
   Wgrad += 2.0*(r_ui_est - r_ui)*((uFeat - iFeat)*iFeat.transpose());
 }
 
+
+void ModelRMSE::computeRMSESparseGrad(int u, int i, float r_ui, 
+    Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data) {
+  
+  float r_ui_est;
+   
+  r_ui_est  = estPosRating(u, i, data, pdt);
+   
+  Wgrad.fill(0);
+
+  //f_u*f_i^T
+  updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, i, 1);
+  
+  //-f_i*f_i^T
+  updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, i, data.itemFeatMat, i, -1);
+  
+  //2*(r_ui_est-r_ui)
+  Wgrad *= 2.0*(r_ui_est - r_ui);
+    
+  //add Wgrad to gradient of l2 reg
+  Wgrad += 2.0*l2Reg*W;
+
+}
 
 //gradient check
 void ModelRMSE::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
@@ -100,6 +125,7 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
+  Eigen::VectorXf pdt(nFeatures);
   float bestObj, prevObj, valRecall;
   int trainNNZ = getNNZ(data.trainMat); 
 
@@ -110,6 +136,7 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
 
   for (int iter = 0; iter < maxIter; iter++) {
     for (int subIter = 0; subIter < trainNNZ; subIter++) {
+    //for (int subIter = 0; subIter < 10; subIter++) {
       
       //sample user
       while (1) {
@@ -136,7 +163,8 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
 
       //compute gradient
       //gradCheck(uFeat, iFeat, Wgrad, r_ui);
-      computeGrad(uFeat, iFeat, Wgrad, r_ui);
+      //computeRMSEGrad(uFeat, iFeat, Wgrad, r_ui);
+      computeRMSESparseGrad(u, item, r_ui, Wgrad, pdt, data);
 
       //update W
       W -= learnRate*Wgrad;      

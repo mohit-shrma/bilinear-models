@@ -190,6 +190,7 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
   int nItemsInTopN, nTestUserItems, testItem;
   float recall_u;
 
+  int uCount = 0;
 
   for (int u = uStart; u < uEnd; u++) {
     
@@ -235,6 +236,13 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
     }
 
     uRecalls[u] = recall_u;
+    uCount++;
+    /*
+    if (uCount % 100 == 0) {
+      std::cout << "\nustart: " << uStart << " uEnd: " << uEnd << " uCount: " 
+        << uCount << std::endl;
+    }
+    */
   }
    
 }

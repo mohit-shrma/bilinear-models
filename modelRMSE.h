@@ -10,8 +10,10 @@ class ModelRMSE: public Model {
     ModelRMSE(const Params &params, int nFeatures):Model(params, nFeatures){}
     virtual void train(const Data &data, Model &bestModel);
     virtual float objective(const Data& data);
-    void computeGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
+    void computeRMSEGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
         Eigen::MatrixXf& Wgrad, float r_ui);
+    void computeRMSESparseGrad(int u, int i, float r_ui, 
+      Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data);
     void gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
         Eigen::MatrixXf& Wgrad, float r_ui);
 };
