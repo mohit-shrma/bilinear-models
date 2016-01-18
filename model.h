@@ -17,7 +17,6 @@ class Model {
   
   public:
     int nFeatures;
-    Eigen::MatrixXf W;
     
     float l2Reg;
     float nucReg;
@@ -37,10 +36,16 @@ class Model {
       std::cerr << "\nTraining not in base class";
     };
     
-    float estPosRating(int u, int item, const Data& data,
-      Eigen::VectorXf& pdt);
-    float estNegRating(int u, int item, const Data& data, 
-      Eigen::VectorXf& pdt);
+    virtual float estPosRating(int u, int item, const Data& data,
+      Eigen::VectorXf& pdt) {
+      std::cerr << "\nModel::estPosRating implementation not in base class";
+      return -1;
+    }
+    virtual float estNegRating(int u, int item, const Data& data, 
+      Eigen::VectorXf& pdt) {
+      std::cerr << "\nModel::estPosRating implementation not in base class";
+      return -1;
+    }
     float computeRecall(gk_csr_t *mat, const Data &data, int N, 
         std::unordered_set<int> items);
     float computeRecallPar(gk_csr_t *mat, const Data &data, int N, 

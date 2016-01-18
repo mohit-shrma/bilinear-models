@@ -121,6 +121,8 @@ void ModelRMSE::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
 
 void ModelRMSE::train(const Data &data, Model& bestModel) {
   
+  std::cout << "\nModelRMSE::train";
+
   int bestIter;
   Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
   Eigen::VectorXf iFeat(nFeatures);
@@ -131,10 +133,13 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
 
   int u, ii, item, nUserItems;
   float r_ui;
-  
+   
   std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
+  
 
   for (int iter = 0; iter < maxIter; iter++) {
+    std::chrono::time_point<std::chrono::system_clock> startSub, endSub;
+    startSub = std::chrono::system_clock::now();
     for (int subIter = 0; subIter < trainNNZ; subIter++) {
     //for (int subIter = 0; subIter < 10; subIter++) {
       
@@ -158,8 +163,8 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
         }
       }
       
-      uFeat = data.uFeatAcuum.row(u);
-      extractFeat(data.itemFeatMat, item, iFeat);
+      //uFeat = data.uFeatAcuum.row(u);
+      //extractFeat(data.itemFeatMat, item, iFeat);
 
       //compute gradient
       //gradCheck(uFeat, iFeat, Wgrad, r_ui);
@@ -172,21 +177,30 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
       //std::cout << "\n" << W.block<3,3>(0,0) << std::endl;
       //std::cout << W << std::endl;
     }
+    endSub = std::chrono::system_clock::now(); 
+    std::chrono::duration<double> durationSub =  (endSub - startSub) ;
+    std::cout << "\nsvd duration: " << durationSub.count();
       
     //nuclear norm projection after all sub-iters
     //performNucNormProj(W, nucReg);
+    std::chrono::time_point<std::chrono::system_clock> startSVD, endSVD;
+    startSVD = std::chrono::system_clock::now();
+    
     performNucNormProjSVDLib(W, rank);
+    
+    endSVD = std::chrono::system_clock::now(); 
+    std::chrono::duration<double> durationSVD =  (endSVD - startSVD) ;
+    std::cout << "\nsvd duration: " << durationSVD.count();
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {
-      valRecall = computeRecall(data.valMat, data, 10, data.valItems);
+      //valRecall = computeRecallPar(data.valMat, data, 10, data.valItems);
       if (isTerminateModelObj(bestModel, data, iter, bestIter, bestObj, 
           prevObj)) {
         break;
       }
-      std::cout << std::endl << "Iter: " << iter << " obj: " << prevObj
-        << " best iter: " << bestIter << " best obj: " << bestObj 
-        << " val recall: " << valRecall << " W norm: " << W.norm() << std::endl;
+      std::cout << "\nIter: " << iter << " obj: " << prevObj
+        << " best iter: " << bestIter << " best obj: " << bestObj << std::endl;
       std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
     }
 

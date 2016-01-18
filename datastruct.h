@@ -122,7 +122,8 @@ class Data {
       
       uFeatAcuum = Eigen::MatrixXf::Zero(nUsers, nFeatures);
       int tempNNZ = 0;
-      std::ofstream opMat("featAccu.mat");
+      std::string fName = "featAccu.mat"; 
+      std::ofstream opMat(fName);
       if (opMat.is_open()) {
         //accumulate all user features
         for (int u = 0; u < nUsers; u++) {
@@ -150,7 +151,7 @@ class Data {
         std::cout << "\nuFeatAccum NNZ: " << tempNNZ <<  " density: "
           << (float)tempNNZ/float(nUsers*nFeatures)  << std::endl;
 
-        uFAccumMat = gk_csr_Read("featAccu.mat", GK_CSR_FMT_CSR, 1, 1);
+        uFAccumMat = gk_csr_Read((char*) fName.c_str(), GK_CSR_FMT_CSR, 1, 1);
         gk_csr_CreateIndex(uFAccumMat, GK_CSR_COL);
         std::cout << "\nnnz ufaccum: " << getNNZ(uFAccumMat);
       }
@@ -163,7 +164,85 @@ class Data {
     }
     
 
-    ~Data() {
+  std::array<int, 3> sampleTriplet() const {
+    
+    std::array<int, 3> triplet{{-1, -1, -1}};
+    int u = -1, i = -1, j = -1, ii, jj;
+    int nUserItems, start, end;
+    int nTrainItems = trainItems.size();
+    int32_t *ui_rowind = trainMat->rowind;
+    ssize_t *ui_rowptr = trainMat->rowptr;
+    float   *ui_rowval = trainMat->rowval;
+    
+    //sample user
+    while (1) {
+      u = std::rand() % nUsers;
+      if (posTrainUsers.find(u) != posTrainUsers.end()) {
+        //found u
+        break;
+      }
+    }
+    triplet[0] = u;
+
+    //sample pos item
+    nUserItems = ui_rowptr[u+1] - ui_rowptr[u];
+    while (1) {
+      ii = std::rand()%nUserItems + ui_rowptr[u];
+      i = ui_rowind[ii];
+      if (ui_rowval[ii] > 0) {
+        break;
+      }
+    }
+    triplet[1] = i;
+
+    //sample neg item
+    while(1) {
+      jj = std::rand()%nUserItems;
+      if (ui_rowval[jj + ui_rowptr[u]] == 0.0) {
+        //explicit 0
+        j = ui_rowind[jj + ui_rowptr[u]];
+        break;
+      } else {
+        //search for implicit 0
+        
+        if (0 == jj) {
+          start = 0;
+          end = ui_rowind[ui_rowptr[u]]; //first rated item by u
+        } else if (nUserItems-1 == jj) {
+          start = ui_rowind[ui_rowptr[u] + jj] + 1; //item next to last rated item
+          end = nTrainItems;
+        } else {
+          start = ui_rowind[ui_rowptr[u] + jj] + 1; //item next to jjth item
+          end = ui_rowind[ui_rowptr[u] + jj + 1]; //item rated after jjth item
+        }
+
+        //check for empty interval
+        if (end - start > 0) {
+          j = std::rand()%(end-start) + start;
+        } else {
+          continue;
+        }
+
+        //make sure sampled -ve item not present in testSet and valSet
+        if (testItems.find(j) != testItems.end() ||
+            valItems.find(j) != valItems.end()) {
+          //found in either set
+          continue;
+        }
+
+        if (trainItems.find(j) != trainItems.end()) {
+          break;
+        }
+      }
+    } //end while
+
+    triplet[2] = j;
+
+    return triplet;
+  }
+    
+
+  ~Data() {
       if (trainMat) {
         gk_csr_Free(&trainMat);
       }

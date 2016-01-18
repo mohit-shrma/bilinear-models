@@ -1,36 +1,5 @@
 #include "model.h"
 
-//estimate rating on a positively rated item
-float Model::estPosRating(int u, int item, const Data& data,
-    Eigen::VectorXf& pdt) {
-  float r_ui = 0;
-  pdt.fill(0);
-
-  //compute dot product of mat and sparse vector 
-  matSpVecPdt(W, data.itemFeatMat, item, pdt);
-  //f_u^TWf_i 
-  r_ui = vecSpVecDot(pdt, data.uFAccumMat, u);
-  //-f_i^TWf_i
-  r_ui -= vecSpVecDot(pdt, data.itemFeatMat, item);
-
-  return r_ui; 
-} 
-
-
-//estimate rating on a item not rated before
-float Model::estNegRating(int u, int item, const Data& data, 
-    Eigen::VectorXf& pdt) {
-  float r_ui = 0;
-  pdt.fill(0);
-
-  //compute dot product of mat and sparse vector 
-  matSpVecPdt(W, data.itemFeatMat, item, pdt);
-  r_ui = vecSpVecDot(pdt, data.uFAccumMat, u);
-
-  return r_ui;
-}
-
-
 Model::Model(const Params &params, int p_nFeatures) {
   nFeatures = p_nFeatures;
   l2Reg     = params.l2Reg;
@@ -39,15 +8,6 @@ Model::Model(const Params &params, int p_nFeatures) {
   rank      = params.rank;
   maxIter   = params.maxIter;
   pcSamples = params.pcSamples; 
-  //initialize model matrix
-  W = Eigen::MatrixXf::Zero(nFeatures, nFeatures);
-  for (int i = 0; i < nFeatures; i++) {
-    for (int j = 0; j < nFeatures; j++) {
-      W(i,j) = (float)std::rand()/ (float)(1.0 + RAND_MAX);
-    }
-  }
-  
-  std::cout << "\nW norm: " << W.norm() << std::endl;
 }
 
 
@@ -75,8 +35,7 @@ bool Model::isTerminateModel(Model& bestModel, const Data& data, int iter,
     if (fabs(prevRecall - currRecall) < EPS) {
       //convergence
       std::cout << "\nConverged in iteration: " << iter << " prevRecall: "
-        << prevRecall << " currRecall: " << currRecall << " W norm: "
-        << W.norm();
+        << prevRecall << " currRecall: " << currRecall;
       ret = true;
     }
 
@@ -191,6 +150,8 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
   float recall_u;
 
   int uCount = 0;
+  
+  //Eigen::MatrixXf uFeatWPdt = spMatMatPdt(data.itemFeatMat, W);
 
   for (int u = uStart; u < uEnd; u++) {
     
@@ -204,6 +165,8 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
     for (const int &item: items) {
       //extractFeat(data.itemFeatMat, item, iFeat);
       //rating = data.uFeatAcuum.row(u)*W*iFeat;
+      //pdt = uFeatWPdt.row(u);
+      //rating = vecSpVecDot(pdt, data.itemFeatMat, item); 
       rating = estNegRating(u, item, data, pdt);
       itemRatings.push_back(std::make_pair(item, rating));
     }
@@ -237,12 +200,10 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
 
     uRecalls[u] = recall_u;
     uCount++;
-    /*
     if (uCount % 100 == 0) {
       std::cout << "\nustart: " << uStart << " uEnd: " << uEnd << " uCount: " 
         << uCount << std::endl;
     }
-    */
   }
    
 }
@@ -324,17 +285,14 @@ float Model::computeRMSE(gk_csr_t *mat, const Data& data) {
   
   int item;
   float r_ui, r_ui_est, rmse = 0;
-  Eigen::VectorXf iFeat(nFeatures);
-  Eigen::VectorXf uFeat(nFeatures);
+  Eigen::VectorXf pdt(nFeatures);
   int nnz = 0;
 
   for (int u = 0; u < mat->nrows; u++) {
-    uFeat = data.uFeatAcuum.row(u);
     for (int ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
       item = mat->rowind[ii];
-      extractFeat(data.itemFeatMat, item, iFeat);
       r_ui = mat->rowval[ii];
-      r_ui_est = (uFeat - iFeat).transpose()*W*iFeat;
+      r_ui_est = estPosRating(u, item, data, pdt);
       rmse += (r_ui - r_ui_est)*(r_ui - r_ui_est);
       nnz++;
     }

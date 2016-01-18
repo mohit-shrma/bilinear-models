@@ -164,3 +164,30 @@ void updateMatWSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1,
 
 }
 
+
+void spVecVecOuterPdt(Eigen::MatrixXf& pdt, Eigen::VectorXf& vec, gk_csr_t* mat,
+    int row) {
+  for (int ii = mat->rowptr[row]; ii < mat->rowptr[row+1]; ii++) {
+    int i = mat->rowind[ii];
+    for (int j = 0; j < vec.size(); j++) {
+      pdt(i,j) = mat->rowval[ii]*vec[j];
+    }
+  }
+}
+
+
+Eigen::MatrixXf spMatMatPdt(gk_csr_t *mat, Eigen::MatrixXf& W) {
+
+  int nrows = mat->nrows;
+  int ncols = W.cols();
+
+  Eigen::MatrixXf res(nrows, ncols);
+  Eigen::VectorXf pdt(ncols);
+  for (int i = 0; i < nrows; i++) {
+    spVecMatPdt(W, mat, i, pdt);
+    res.row(i) = pdt;
+  }
+
+  return res;
+}
+

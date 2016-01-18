@@ -3,11 +3,13 @@
   
 #include "model.h"
 #include "mathUtil.h"
+#include "modelFullMat.h"
+#include <chrono>
 
-class ModelRMSE: public Model {
+class ModelRMSE: public ModelFullMat {
   
   public:
-    ModelRMSE(const Params &params, int nFeatures):Model(params, nFeatures){}
+    ModelRMSE(const Params &params, int nFeatures):ModelFullMat(params, nFeatures){}
     virtual void train(const Data &data, Model &bestModel);
     virtual float objective(const Data& data);
     void computeRMSEGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
