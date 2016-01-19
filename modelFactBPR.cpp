@@ -1,28 +1,34 @@
 #include "modelFactBPR.h"
 
-void computeUGrad(int u, int i, int j, const Data& data, 
+void ModelFactBPR::computeUGrad(int u, int i, int j, const Data& data, 
     Eigen::MatrixXf& Ugrad, Eigen::VectorXf& iFeat, Eigen::VectorXf& jFeat,
     Eigen::VectorXf& uFeat) {
-
-  float r_uij = ((uFeat - iFeat).transpose()*U)*(V.transpose()*iFeat) -
-                (uFeat.transpose()*U)*(V.transpose()*jFeat);
+ 
+  float r_ui = ((uFeat - iFeat).transpose()*U)*(V.transpose()*iFeat);
+  float r_uj = (uFeat.transpose()*U)*(V.transpose()*jFeat);
+  float r_uij = r_ui - r_uj;
+  
   float expCoeff = 1.0/(1.0 + r_uij);
   Ugrad = (uFeat - iFeat)*(iFeat.transpose()*V) - uFeat*(jFeat.transpose()*V);
   Ugrad *= expCoeff;
-  //TODO: regularization
+  //regularization
+  Ugrad += 2.0*l2Reg*U;
 }
 
 
-void computeVGrad(int u, int i, int j, const Data& data, 
+void ModelFactBPR::computeVGrad(int u, int i, int j, const Data& data, 
     Eigen::MatrixXf& Vgrad, Eigen::VectorXf& iFeat, Eigen::VectorXf& jFeat,
     Eigen::VectorXf& uFeat) {
-
-  float r_uij = ((uFeat - iFeat).transpose()*U)*(V.transpose()*iFeat) -
-                (uFeat.transpose()*U)*(V.transpose()*jFeat);
+ 
+  float r_ui = ((uFeat - iFeat).transpose()*U)*(V.transpose()*iFeat);
+  float r_uj = (uFeat.transpose()*U)*(V.transpose()*jFeat);
+  float r_uij = r_ui - r_uj;
+  
   float expCoeff = 1.0/(1.0 + r_uij);
   Vgrad = (iFeat - jFeat)*(uFeat.transpose()*U) - iFeat*(iFeat.transpose()*U);
   Vgrad *= expCoeff;
-  //TODO: regularization
+  //regularization
+  Vgrad += 2.0*l2Reg*V;
 }
 
 

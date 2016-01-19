@@ -1,4 +1,4 @@
-#include "modelFact.h"
+#include "modelFactMat.h"
 
 
 ModelFactMat::ModelFactMat(const Params &params, int nFeatures)
@@ -12,13 +12,18 @@ ModelFactMat::ModelFactMat(const Params &params, int nFeatures)
         V(i, j) = (float)std::rand()/ (float)(1.0 + RAND_MAX);
     }
   }
+  U *= 0.01;
+  V *= 0.01;
+  std::cout << "\nU dim: " << U.rows() << " " << U.cols();
+  std::cout << "\nV dim: " << V.rows() << " " << V.cols();
 }
 
 
 float ModelFactMat::estPosRating(int u, int item, const Data& data, 
-    Eigen::VectorXf& pdt1) {
+    Eigen::VectorXf& pdt) {
   float r_ui = 0;
   //TODO: removed this temporary creation
+  Eigen::VectorXf pdt1(rank);
   Eigen::VectorXf pdt2(rank);
   pdt1.fill(0);
   pdt2.fill(0);
@@ -29,7 +34,8 @@ float ModelFactMat::estPosRating(int u, int item, const Data& data,
   pdt1 = pdt1 - pdt2;
 
   //V^Tf_i
-  matSpVecPdt(V, data.itemFeatMat, item, pdt2);
+  Eigen::MatrixXf Vt = V.transpose();
+  matSpVecPdt(Vt, data.itemFeatMat, item, pdt2);
   
   r_ui = pdt1.dot(pdt2);
 
@@ -38,9 +44,10 @@ float ModelFactMat::estPosRating(int u, int item, const Data& data,
 
 
 float ModelFactMat::estNegRating(int u, int item, const Data& data, 
-    Eigen::VectorXf& pdt1) {
+    Eigen::VectorXf& pdt) {
   float r_ui = 0;
   //TODO: removed this temporary creation
+  Eigen::VectorXf pdt1(rank);
   Eigen::VectorXf pdt2(rank);
   pdt1.fill(0);
   pdt2.fill(0);
@@ -49,7 +56,8 @@ float ModelFactMat::estNegRating(int u, int item, const Data& data,
   spVecMatPdt(U, data.uFAccumMat, u, pdt1); 
 
   //V^Tf_i
-  matSpVecPdt(V, data.itemFeatMat, item, pdt2);
+  Eigen::MatrixXf Vt = V.transpose();
+  matSpVecPdt(Vt, data.itemFeatMat, item, pdt2);
   
   r_ui = pdt1.dot(pdt2);
 

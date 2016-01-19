@@ -4,6 +4,10 @@
 #include "modelBPR.h"
 #include "modelRMSE.h"
 
+#include "modelFactBPR.h"
+#include "modelFactRMSE.h"
+
+
 Params parse_cmd_line(int argc, char *argv[]) {
   
   if (argc < 13) {
@@ -28,33 +32,33 @@ int main(int argc, char *argv[]) {
   std::srand(params.seed);
 
   Data data(params);
-  
+
+  /*
   //create baseline model
   ModelFullMat cosineModel(params, data.nFeatures);
   cosineModel.W = Eigen::MatrixXf::Identity(data.nFeatures, data.nFeatures);
-  std::cout << "\nW sum: " << cosineModel.W.sum(); 
- 
-  /*
-  float baseRecall = cosineModel.computeRecall(data.testMat, data, 10, 
-      data.testItems);
-  std::cout << "\nTest baseline recall: " << baseRecall << std::endl;
- */
 
   float baseRecallPar = cosineModel.computeRecallPar(data.testMat, data, 10, 
       data.testItems);
   std::cout << "\nTest baseline recall par: " << baseRecallPar << std::endl;
   
-  
-  Model bestModel(params, data.nFeatures);
+  float baseValRecallPar = cosineModel.computeRecallPar(data.valMat, data, 10, 
+      data.valItems);
+  std::cout << "\nVal baseline recall par: " << baseValRecallPar << std::endl;
+  */
+
+  ModelFactBPR bestModel(params, data.nFeatures);
   //create bpr model
   //ModelBPR bprModel(params, data.nFeatures);
   //bprModel.train(data, bestModel); 
   
   //create rmse model
-  ModelRMSE rmseModel(params, data.nFeatures);
+  //ModelRMSE rmseModel(params, data.nFeatures);
   //rmseModel.train(data, bestModel);
 
-  
+  ModelFactBPR m(params, data.nFeatures);
+  m.train(data, bestModel);
+
   float recall = bestModel.computeRecallPar(data.testMat, data, 10, 
       data.testItems);
   std::cout << "\nTest recall: " << recall << std::endl;

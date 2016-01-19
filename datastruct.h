@@ -73,6 +73,7 @@ class Data {
     std::unordered_set<int> posTrainUsers;
 
     void printDetails() {
+      std::cout << "\nnUsers: " << nUsers << " nFeatures: " << nFeatures;
       std::cout << "\ntrain nrows: " << trainMat->nrows << " ncols: "  
         << trainMat->ncols;
       std::cout << "\ntest nrows: " << testMat->nrows << " ncols: "  
@@ -112,7 +113,7 @@ class Data {
       
       if (NULL != params.itemFeatureFile) {
         std::cout << "\nReading item-features matrix 1-indexed... " << std::endl;
-        itemFeatMat = gk_csr_Read(params.itemFeatureFile, GK_CSR_FMT_CSR, 0, CSR1INDEXED);
+        itemFeatMat = gk_csr_Read(params.itemFeatureFile, GK_CSR_FMT_CSR, 1, CSR1INDEXED);
         if (params.isFeatNorm) {
           gk_csr_Normalize(itemFeatMat, GK_CSR_ROW, 2);
         }

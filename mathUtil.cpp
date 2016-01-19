@@ -104,7 +104,9 @@ void matSpVecPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row,
   float val;
   
   if (mat->ncols != W.cols()) {
-    std::cerr << "\ndimensions dont match" << std::endl;
+    std::cerr << "\nmatSpVecPdt: dimensions dont match: (" 
+      << mat->nrows << "," << mat->ncols << ") (" 
+      << W.rows() << "," << W.cols() << ")" <<  std::endl;
   }
 
   pdt.fill(0);
@@ -128,7 +130,7 @@ void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row,
   float val;
   
   if (mat->ncols != W.rows()) {
-    std::cerr << "\ndimensions dont match" << std::endl;
+    std::cerr << "\nspVecMatPdt: dimensions dont match: " << mat->ncols << " " << W.rows() << std::endl;
   }
 
   pdt.fill(0);

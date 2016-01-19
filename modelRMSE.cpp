@@ -135,7 +135,6 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   float r_ui;
    
   std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
-  
 
   for (int iter = 0; iter < maxIter; iter++) {
     std::chrono::time_point<std::chrono::system_clock> startSub, endSub;
@@ -205,7 +204,6 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
     }
 
   }
-
 
 }
 

@@ -15,7 +15,7 @@ bool Model::isTerminateModel(Model& bestModel, const Data& data, int iter,
     int& bestIter, float& bestRecall, float& prevRecall) {
   
   bool ret = false;
-  float currRecall = computeRecall(data.valMat, data, 10, data.valItems);
+  float currRecall = computeRecallPar(data.valMat, data, 10, data.valItems);
   
   if (iter > 0) {
     
@@ -200,10 +200,12 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
 
     uRecalls[u] = recall_u;
     uCount++;
+    /*
     if (uCount % 100 == 0) {
       std::cout << "\nustart: " << uStart << " uEnd: " << uEnd << " uCount: " 
         << uCount << std::endl;
     }
+    */
   }
    
 }
