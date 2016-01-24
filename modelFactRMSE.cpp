@@ -38,10 +38,31 @@ void ModelFactRMSE::computeUGrad(Eigen::MatrixXf& Ugrad, Eigen::VectorXf& iFeat,
 }
 
 
+void ModelFactRMSE::computeUSpGrad(Eigen::MatrixXf& Ugrad, float r_ui, 
+    float r_ui_est, Eigen::VectorXf& f_u_f_i_diff, Eigen::VectorXf& f_iT_V) {
+  Ugrad = f_u_f_i_diff*f_iT_V.transpose();
+  Ugrad *= 2.0*(r_ui_est - r_ui);
+  //regularization
+  Ugrad += 2.0*l2Reg*U;
+}
+
+
 void ModelFactRMSE::computeVGrad(Eigen::MatrixXf& Vgrad, Eigen::VectorXf& iFeat, 
     Eigen::VectorXf& uFeat, float r_ui) {
   float r_ui_est = ((uFeat - iFeat).transpose()*U)*(V.transpose()*iFeat);
   Vgrad = iFeat*((uFeat-iFeat).transpose()*U);
+  Vgrad *= 2.0*(r_ui_est - r_ui);
+  //regularization
+  Vgrad += 2.0*l2Reg*V;
+}
+
+
+void ModelFactRMSE::computeVSpGrad(Eigen::MatrixXf& Vgrad, const Data& data, 
+    int item, float r_ui, float r_ui_est,  
+    Eigen::VectorXf& f_u_f_i_T_U) {
+
+  Vgrad.fill(0);
+  spVecVecOuterPdt(Vgrad, f_u_f_i_T_U, data.itemFeatMat, item);  
   Vgrad *= 2.0*(r_ui_est - r_ui);
   //regularization
   Vgrad += 2.0*l2Reg*V;
@@ -118,11 +139,15 @@ void ModelFactRMSE::train(const Data &data, Model& bestModel) {
   Eigen::MatrixXf Vgrad(nFeatures, rank);  
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
+  Eigen::VectorXf f_uT_U(rank);
+  Eigen::VectorXf f_iT_U(rank);
+  Eigen::VectorXf f_iT_V(rank);
+  Eigen::VectorXf f_u_f_i_diff(nFeatures);
   float bestObj, prevObj, valRecall;
   int trainNNZ = getNNZ(data.trainMat); 
 
   int u, ii, item, nUserItems;
-  float r_ui;
+  float r_ui, r_ui_est;
    
   std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
 
@@ -151,21 +176,41 @@ void ModelFactRMSE::train(const Data &data, Model& bestModel) {
           break;
         }
       }
+     
       
-      uFeat = data.uFeatAcuum.row(u);
-      extractFeat(data.itemFeatMat, item, iFeat);
+      //compute f_u^TU
+      spVecMatPdt(U, data.uFAccumMat, u, f_uT_U);
+      
+      //compute f_i^TU
+      spVecMatPdt(U, data.itemFeatMat, item, f_iT_U);
+
+      //compute f_i^TV
+      spVecMatPdt(V, data.itemFeatMat, item, f_iT_V);
+      
+      //compute f_u - f_i
+      spVecDiff(data.uFAccumMat, u, data.itemFeatMat, item, f_u_f_i_diff);
+
+      //r_ui_est
+      r_ui_est = f_iT_V.dot(f_uT_U - f_iT_U);
+
+      //uFeat = data.uFeatAcuum.row(u);
+      //extractFeat(data.itemFeatMat, item, iFeat);
 
       //perform gad check
       //gradCheck(Ugrad, Vgrad, iFeat, uFeat, U, V, r_ui);
 
       //compute U gradient
-      computeUGrad(Ugrad, iFeat, uFeat, r_ui);
-      
+      //computeUGrad(Ugrad, iFeat, uFeat, r_ui);
+      computeUSpGrad(Ugrad, r_ui, r_ui_est, f_u_f_i_diff, f_iT_V);
+
       //update U
       U -= learnRate*Ugrad;
       
       //compute U gradient
-      computeVGrad(Vgrad, iFeat, uFeat, r_ui);
+      //computeVGrad(Vgrad, iFeat, uFeat, r_ui);
+      f_iT_V = f_uT_U - f_iT_U;
+      computeVSpGrad(Vgrad, data, item, r_ui, r_ui_est, f_iT_V);
+
       //update V
       V -= learnRate*Vgrad;
 

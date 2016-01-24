@@ -96,7 +96,8 @@ float vecSpVecDot(Eigen::VectorXf& vec, gk_csr_t *mat, int row) {
   return dotp;
 }
 
-//compute dot product of matrix and sparse vector
+
+//compute dot product of matrix and sparse vector: Ax
 void matSpVecPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
     Eigen::VectorXf& pdt) {
   
@@ -122,7 +123,7 @@ void matSpVecPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row,
 }
 
 
-//compute dot product of sparse vector and dense matrix
+//compute dot product of sparse vector and dense matrix: x^TA
 void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
     Eigen::VectorXf& pdt) {
   
@@ -145,6 +146,7 @@ void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row,
   }
 
 }
+
 
 //update matrix with sign*vec*vec^T
 void updateMatWSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1, 
@@ -172,7 +174,7 @@ void spVecVecOuterPdt(Eigen::MatrixXf& pdt, Eigen::VectorXf& vec, gk_csr_t* mat,
   for (int ii = mat->rowptr[row]; ii < mat->rowptr[row+1]; ii++) {
     int i = mat->rowind[ii];
     for (int j = 0; j < vec.size(); j++) {
-      pdt(i,j) = mat->rowval[ii]*vec[j];
+      pdt(i,j) += mat->rowval[ii]*vec[j];
     }
   }
 }
@@ -192,4 +194,28 @@ Eigen::MatrixXf spMatMatPdt(gk_csr_t *mat, Eigen::MatrixXf& W) {
 
   return res;
 }
+
+
+void spVecDiff(gk_csr_t* mat1, int row1, gk_csr_t* mat2, int row2, 
+    Eigen::VectorXf& res) {
+  
+  int ii, ind;
+  float val;
+  
+  res.fill(0);
+  for (ii = mat1->rowptr[row1]; ii < mat1->rowptr[row1+1]; ii++) {
+    ind = mat1->rowind[ii];
+    val = mat1->rowval[ii];
+    res[ind] = val;
+  }
+
+  for (ii = mat2->rowptr[row2]; ii < mat2->rowptr[row2+1]; ii++) {
+    ind = mat2->rowind[ii];
+    val = mat2->rowval[ii];
+    res[ind] -= val;
+  }
+
+}
+
+
 
