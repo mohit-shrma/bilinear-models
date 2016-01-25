@@ -5,4 +5,4 @@ bilinear
 test.*
 tags
 *.swp
-
+*.m~
