@@ -19,6 +19,9 @@ class ModelFactBPR: public ModelFactMat {
       Eigen::VectorXf& uFeat);
     void computeVSpGrad(int u, int i, int j, float r_uij, const Data& data, 
       Eigen::MatrixXf& Vgrad, Eigen::VectorXf& f_uT_U, Eigen::VectorXf& f_uT_U_f_iT_U);
+    void gradCheck(int u, int i, int j, Eigen::MatrixXf& Ugrad, Eigen::MatrixXf& Vgrad,
+      const Data& data, Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
+      Eigen::VectorXf& jFeat);
 };
 
 #endif

@@ -18,6 +18,8 @@ void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row,
     Eigen::VectorXf& pdt);
 void updateMatWSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1, 
     gk_csr_t *mat2, int row2, float scalar);
+void updateMatWSymSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1, 
+    gk_csr_t *mat2, int row2, float scalar);
 Eigen::MatrixXf spMatMatPdt(gk_csr_t *mat, Eigen::MatrixXf& W);
 void spVecDiff(gk_csr_t* mat1, int row1, gk_csr_t* mat2, int row2, 
     Eigen::VectorXf& res);

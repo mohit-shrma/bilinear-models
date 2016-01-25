@@ -169,6 +169,31 @@ void updateMatWSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1,
 }
 
 
+//update matrix with sign*(vec1*vec2^T + vec2*vec1^T)
+void updateMatWSymSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1, 
+    gk_csr_t *mat2, int row2, float scalar) {
+  
+  int ind1, ind2;
+  int ii1, ii2;
+  float val1, val2;
+
+  for (ii1 = mat1->rowptr[row1]; ii1 < mat1->rowptr[row1+1]; ii1++) {
+    ind1 = mat1->rowind[ii1];
+    val1 = mat1->rowval[ii1];
+    for (ii2 = mat2->rowptr[row2]; ii2 < mat2->rowptr[row2+1]; ii2++) {
+      ind2 = mat2->rowind[ii2];
+      val2 = mat2->rowval[ii2];
+      W(ind1, ind2) += scalar*val1*val2;
+      W(ind2, ind1) += scalar*val1*val2;
+    }
+  }
+
+}
+
+
+
+
+//update matrix with spVec*vec^T
 void spVecVecOuterPdt(Eigen::MatrixXf& pdt, Eigen::VectorXf& vec, gk_csr_t* mat,
     int row) {
   for (int ii = mat->rowptr[row]; ii < mat->rowptr[row+1]; ii++) {

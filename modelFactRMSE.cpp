@@ -22,8 +22,10 @@ float ModelFactRMSE::objective(const Data& data) {
 
   norm = V.norm();
   vReg = norm*norm*l2Reg;
+  std::cout << "\nse: " << rmse << " uReg: " << uReg << " U norm: " << U.norm() 
+    << " vReg: " << vReg << " V norm: " << V.norm();
 
-  obj += rmse + uReg + vReg;
+  obj = rmse + uReg + vReg;
   return obj;
 }
 
@@ -73,7 +75,7 @@ void gradCheck(Eigen::MatrixXf& Ugrad, Eigen::MatrixXf& Vgrad,
     Eigen::VectorXf& iFeat, Eigen::VectorXf& uFeat, Eigen::MatrixXf& U,
     Eigen::MatrixXf& V, float r_ui) {
   
-  float lossRight, lossLeft, gradE, lr_ll_e;
+  float lossRight, lossLeft, gradE, lr_ll_e, delta;
   float epsilon = 0.0001;
   float r_ui_est = ((uFeat - iFeat).transpose()*U)*(V.transpose()*iFeat);
 
@@ -101,10 +103,11 @@ void gradCheck(Eigen::MatrixXf& Ugrad, Eigen::MatrixXf& Vgrad,
   
   gradE = Ugrad(i,j);
   lr_ll_e = (lossRight - lossLeft)/(2.0*epsilon); 
-  if (fabs(lr_ll_e - gradE) > 0.001) {
+  delta = lr_ll_e - gradE;
+  if (fabs(delta) > 0.001) {
     std::cout << "\nU lr: " << lossRight << " ll: " << lossLeft 
       << " gradE: " << gradE << " lr_ll_e: " << lr_ll_e 
-      << " lr_ll_e-gradE: " << fabs(lr_ll_e - gradE) << " "
+      << " lr_ll_e-gradE: " << fabs(delta) << " "
       << r_ui_est << " " << r_ui_est2 << " " << r_ui_est3 << std::endl; 
   }
 
@@ -150,6 +153,7 @@ void ModelFactRMSE::train(const Data &data, Model& bestModel) {
   float r_ui, r_ui_est;
    
   std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
+  std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
 
   for (int iter = 0; iter < maxIter; iter++) {
     std::chrono::time_point<std::chrono::system_clock> startSub, endSub;
@@ -177,7 +181,6 @@ void ModelFactRMSE::train(const Data &data, Model& bestModel) {
         }
       }
      
-      
       //compute f_u^TU
       spVecMatPdt(U, data.uFAccumMat, u, f_uT_U);
       
@@ -224,8 +227,8 @@ void ModelFactRMSE::train(const Data &data, Model& bestModel) {
         break;
       }
       std::cout << "\nIter: " << iter << " obj: " << prevObj
-        << " best iter: " << bestIter << " best obj: " << bestObj;
-      std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
+        << " best iter: " << bestIter << " best obj: " << bestObj 
+        << " Train RMSE: " << computeRMSE(data.trainMat, data);
     }
 
   }

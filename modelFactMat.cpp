@@ -12,8 +12,6 @@ ModelFactMat::ModelFactMat(const Params &params, int nFeatures)
         V(i, j) = (float)std::rand()/ (float)(1.0 + RAND_MAX);
     }
   }
-  U *= 0.01;
-  V *= 0.01;
   std::cout << "\nU dim: " << U.rows() << " " << U.cols();
   std::cout << "\nV dim: " << V.rows() << " " << V.cols();
 }
@@ -33,9 +31,8 @@ float ModelFactMat::estPosRating(int u, int item, const Data& data,
   spVecMatPdt(U, data.itemFeatMat, item, pdt2);
   pdt1 = pdt1 - pdt2;
 
-  //V^Tf_i
-  Eigen::MatrixXf Vt = V.transpose();
-  matSpVecPdt(Vt, data.itemFeatMat, item, pdt2);
+  //f_i^TV
+  spVecMatPdt(V, data.itemFeatMat, item, pdt2);
   
   r_ui = pdt1.dot(pdt2);
 
@@ -55,9 +52,8 @@ float ModelFactMat::estNegRating(int u, int item, const Data& data,
   //f_u^TU
   spVecMatPdt(U, data.uFAccumMat, u, pdt1); 
 
-  //V^Tf_i
-  Eigen::MatrixXf Vt = V.transpose();
-  matSpVecPdt(Vt, data.itemFeatMat, item, pdt2);
+  //f_i^TV
+  spVecMatPdt(V, data.itemFeatMat, item, pdt2);
   
   r_ui = pdt1.dot(pdt2);
 
