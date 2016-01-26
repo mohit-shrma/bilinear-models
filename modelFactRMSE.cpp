@@ -156,8 +156,6 @@ void ModelFactRMSE::train(const Data &data, Model& bestModel) {
   std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
 
   for (int iter = 0; iter < maxIter; iter++) {
-    std::chrono::time_point<std::chrono::system_clock> startSub, endSub;
-    startSub = std::chrono::system_clock::now();
     for (int subIter = 0; subIter < trainNNZ; subIter++) {
     //for (int subIter = 0; subIter < 10; subIter++) {
       
