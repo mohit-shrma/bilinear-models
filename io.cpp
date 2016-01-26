@@ -15,3 +15,10 @@ void writeFVec(std::vector<float> fvec, std::string fName) {
 }
 
 
+void dispSpVec(gk_csr_t *mat, int row) {
+  std::cout << std::endl;
+  for (int ii = mat->rowptr[row]; ii < mat->rowptr[row+1]; ii++) {
+    std::cout << mat->rowind[ii] << "," << mat->rowval[ii] << " ";
+  }
+}
+
