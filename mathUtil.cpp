@@ -191,6 +191,58 @@ void updateMatWSymSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1,
 }
 
 
+float sparseDotProd(gk_csr_t* mat1, int i, gk_csr_t* mat2, int j) {
+  float sim = 0;
+  for (int ii = mat1->rowptr[i]; ii < mat1->rowptr[i+1]; ii++) {
+    int ind1 = mat1->rowind[ii];
+    float val1 = mat1->rowval[ii];
+    for (int ii2 = mat2->rowptr[j]; ii2 < mat2->rowptr[j+1]; ii2++) {
+      int ind2 = mat2->rowind[ii2];
+      float val2 = mat2->rowval[ii2];
+      if (ind1 == ind2 ) {
+        sim += val1*val2;
+        break;
+      }
+      if (ind2 >ind1) {
+        break;
+      }
+    }
+  } 
+  return sim;
+}
+
+//TODO: verify
+float sparseDotProd2(gk_csr_t* mat1, int i, gk_csr_t* mat2, int j) {
+  float sim = 0;
+  int ii1, ii2;
+  int ind1, ind2;
+  float val1, val2;
+
+  ii1  = mat1->rowptr[i];
+  ind1 = mat1->rowind[ii1];
+  ii2  = mat2->rowptr[j];
+  ind2 = mat2->rowind[ii2];
+  
+  while ((ii1 < mat1->rowptr[i+1]) && (ii2 < mat2->rowptr[j+1])) {
+    ind1 = mat1->rowind[ii1];
+    ind2 = mat2->rowind[ii2];
+    if (ind1 == ind2) {
+      val1 = mat1->rowval[ii1];
+      val2 = mat2->rowval[ii2];
+      sim += val1*val2;
+      ii1++;
+      ii2++;
+      continue;
+    }
+    if (ind1 < ind2) {
+      ii1++;
+    } else if (ind2 < ind1) {
+      ii2++;
+    }    
+  }
+
+  return sim;
+}
 
 
 //update matrix with spVec*vec^T
