@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_set>
+#include <array>
 #include "util.h"
 #include "GKlib.h"
 #include "const.h"
