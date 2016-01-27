@@ -10,8 +10,9 @@ class ModelCosine: public Model {
     ModelCosine(const Params &params, int nFeatures):Model(params, nFeatures){}
     virtual float estNegRating(int u, int item, const Data& data, 
       Eigen::VectorXf& pdt);
+    virtual float estPosRating(int u, int item, const Data& data, 
+      Eigen::VectorXf& pdt);
 };
-
 
 
 #endif

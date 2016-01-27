@@ -3,15 +3,14 @@
 
 void ModelFactSymBPR::computeUGrad(int u, int i, int j, const Data& data, 
     Eigen::MatrixXf& Ugrad, Eigen::VectorXf& iFeat, Eigen::VectorXf& jFeat,
-    Eigen::VectorXf& uFeat, Eigen::MatrixXf& temp_nf_nf) {
+    Eigen::VectorXf& uFeat) { 
   
   float r_ui = ((uFeat - iFeat).transpose()*U)*(U.transpose()*iFeat);
   float r_uj = (uFeat.transpose()*U)*(U.transpose()*jFeat);
   float r_uij = r_ui - r_uj;
   float expCoeff = -1.0/(1.0 + exp(r_uij));
-  temp_nf_nf = (uFeat - iFeat)*iFeat.transpose() + iFeat*((uFeat - iFeat).transpose());
-  temp_nf_nf -= (uFeat*jFeat.transpose() + jFeat*uFeat.transpose());
-  Ugrad = temp_nf_nf*U;
+  Ugrad = (uFeat - iFeat)*(iFeat.transpose()*U) + iFeat*((uFeat - iFeat).transpose()*U);
+  Ugrad -= (uFeat*(jFeat.transpose()*U) + jFeat*(uFeat.transpose()*U));
   Ugrad *= expCoeff;
   //reg
   Ugrad += 2.0*l2Reg*U;
@@ -60,9 +59,14 @@ void ModelFactSymBPR::train(const Data& data, Model& bestModel) {
  
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
   std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  std::chrono::duration<double> duration;
+  float subDuration, valDuration;
+
   for (int iter = 0; iter < maxIter; iter++) {
+    start = std::chrono::system_clock::now();
     for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
-    //for (int subIter = 0; subIter < 10; subIter++) {
+    //for (int subIter = 0; subIter < 25000; subIter++) {
         
       //sample triplet
       triplet = data.sampleTriplet();
@@ -92,23 +96,30 @@ void ModelFactSymBPR::train(const Data& data, Model& bestModel) {
       r_uij_est = f_uT_U.dot(f_iT_U - f_jT_U) - f_iT_U.dot(f_iT_U);
 
       //compute U gradient
-      //computeUGrad(u, i, j, data, Ugrad, iFeat, jFeat, uFeat);
-      computeUSpGrad(u, i, j, data, Ugrad, r_uij_est, f_iT_U, f_uT_U, f_jT_U,
-          f_iT_U_f_jT_U, f_uT_U_2f_iT_U);
+      computeUGrad(u, i, j, data, Ugrad, iFeat, jFeat, uFeat);
+      //computeUSpGrad(u, i, j, data, Ugrad, r_uij_est, f_iT_U, f_uT_U, f_jT_U,
+      //    f_iT_U_f_jT_U, f_uT_U_2f_iT_U);
       //update U
       U -= learnRate*Ugrad;
-
     } 
     
-    
+    end = std::chrono::system_clock::now();
+    duration  = end - start; 
+    subDuration = duration.count();
+
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {
+      start = std::chrono::system_clock::now();
       if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
           prevRecall)) {
         break;
       }
+      end = std::chrono::system_clock::now();
+      duration = end - start;
+      valDuration = duration.count();
       std::cout << std::endl <<"iter: " << iter << " val recall: " << prevRecall
-        << " best recall: " << bestRecall;
+        << " best recall: " << bestRecall << " U norm: " << U.norm() 
+        << " sub duration: " << subDuration << " val duration: "  << valDuration;
     }
   
   }

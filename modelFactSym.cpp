@@ -10,7 +10,7 @@ ModelFactSym::ModelFactSym(const Params &params, int nFeatures)
         U(i, j) = (float)std::rand()/ (float)(1.0 + RAND_MAX);
     }
   }
-  std::cout << "\nU dim: " << U.rows() << " " << U.cols();
+  std::cout << "\nU dim: " << U.rows() << " " << U.cols() << " U norm: " << U.norm();
 }
 
 
@@ -45,7 +45,6 @@ float ModelFactSym::estNegRating(int u, int item, const Data& data,
   
   //(f_u^TU)
   spVecMatPdt(U, data.uFAccumMat, u, pdt1); 
-  pdt1 = pdt1 - pdt2;
 
   //f_i^TU
   spVecMatPdt(U, data.itemFeatMat, item, pdt2);

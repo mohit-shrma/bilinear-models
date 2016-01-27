@@ -10,7 +10,7 @@ class ModelFactSymBPR: public ModelFactSym {
     virtual void train(const Data& data, Model& bestModel);
     void computeUGrad(int u, int i, int j, const Data& data, 
       Eigen::MatrixXf& Ugrad, Eigen::VectorXf& iFeat, Eigen::VectorXf& jFeat,
-      Eigen::VectorXf& uFeat, Eigen::MatrixXf& temp_nf_nf) ;
+      Eigen::VectorXf& uFeat);
     void computeUSpGrad(int u, int i, int j, const Data& data, 
       Eigen::MatrixXf& Ugrad, float r_uij_est, Eigen::VectorXf& f_iT_U,
       Eigen::VectorXf& f_uT_U, Eigen::VectorXf& f_jT_U, 

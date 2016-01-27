@@ -37,15 +37,9 @@ class Model {
     };
     
     virtual float estPosRating(int u, int item, const Data& data,
-      Eigen::VectorXf& pdt) {
-      std::cerr << "\nModel::estPosRating implementation not in base class";
-      return -1;
-    }
+      Eigen::VectorXf& pdt) = 0;
     virtual float estNegRating(int u, int item, const Data& data, 
-      Eigen::VectorXf& pdt) {
-      std::cerr << "\nModel::estPosRating implementation not in base class";
-      return -1;
-    }
+      Eigen::VectorXf& pdt) = 0;
     float computeRecall(gk_csr_t *mat, const Data &data, int N, 
         std::unordered_set<int> items);
     float computeRecallPar(gk_csr_t *mat, const Data &data, int N, 
