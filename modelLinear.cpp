@@ -4,7 +4,7 @@ ModelLinear::ModelLinear(const Params &params,
     int nFeatures):Model(params, nFeatures) {
   w = Eigen::VectorXf(nFeatures); 
   for (int i = 0; i < nFeatures; i++) {
-    w(i) = (float)std::rand()/ (float)(1.0 + RAND_MAX); 
+    w(i) = 1.0;//(float)std::rand()/ (float)(1.0 + RAND_MAX); 
   }
   std::cout << "\n w norm: " << w.norm();
 }
