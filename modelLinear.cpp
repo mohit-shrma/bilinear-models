@@ -13,15 +13,21 @@ ModelLinear::ModelLinear(const Params &params,
 float ModelLinear::estPosRating(int u, int item, const Data& data,
       Eigen::VectorXf& pdt) {
   float r_ui = 0;
-  //(f_u-f_i)*w*f_i
-  Eigen::VectorXf fu_fi(nFeatures);
-  spVecDiff(data.uFAccumMat, u, data.itemFeatMat, item, fu_fi); 
-  
-  fu_fi = fu_fi.*w;
+  //compute (f_u-f_i) .* w .* f_i
+  //f_u .* w .*f_i
+  r_ui = spVecWtspVecPdt(w, data.itemFeatMat, item, data.uFAccumMat, u);
+  //-f_i .* w .* f_i
+  r_ui -= spVecWtspVecPdt(w, data.itemFeatMat, item, data.itemFeatMat, item);
+  return r_ui;
 }
 
 
 float ModelLinear::estNegRating(int u, int item, const Data& data,
       Eigen::VectorXf& pdt) {
-  
+  //compute f_u .* w .* f_i
+  //f_u .* w .*f_i
+  float r_ui = spVecWtspVecPdt(w, data.itemFeatMat, item, data.uFAccumMat, u);
+  return r_ui;  
 }
+
+

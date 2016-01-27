@@ -298,4 +298,23 @@ void spVecDiff(gk_csr_t* mat1, int row1, gk_csr_t* mat2, int row2,
 }
 
 
+//compute a.*w.*b componentwise hadamard product
+float spVecWtspVecPdt(Eigen::VectorXf& w, gk_csr_t* mat1, int row1, 
+    gk_csr_t* mat2, int row2) {
+  float res = 0;
+  for (int ii1 = mat1->rowptr[row1]; ii1 < mat1->rowptr[row1+1]; ii1++) {
+    int ind1 = mat1->rowind[ii1];
+    float val1 = mat1->rowval[ii1];
+    for (int ii2 = mat2->rowptr[row2]; ii2 < mat2->rowptr[row2+1]; ii2++) {
+      int ind2 = mat2->rowind[ii2];
+      float val2 = mat2->rowval[ii2];
+      if (ind1 == ind2) {
+        res += w[ind1]*val1*val2;
+      }
+    }
+  }
+  return res;
+}
+
+
 

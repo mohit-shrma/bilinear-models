@@ -1,6 +1,8 @@
 #ifndef _MODEL_LINEAR_H_
 #define _MODEL_LINEAR_H_
 
+#include "model.h"
+
 class ModelLinear:public Model {
 
   public:
