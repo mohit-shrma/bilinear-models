@@ -18,6 +18,7 @@ class Params {
     char *itemFeatureFile;
 
     float l2Reg;
+    float wReg;
     float nucReg;
     float learnRate;
     int rank;
@@ -30,11 +31,11 @@ class Params {
 
     Params(char *p_trainMatFile, char *p_testMatFile, char *p_valMatFile,
             char *p_itemFeatureFile, 
-            float p_l2Reg, float p_nucReg, float p_learnRate, int p_rank,
+            float p_l2Reg, float p_wReg, float p_nucReg, float p_learnRate, int p_rank,
             int p_seed, float p_pcSamples, int p_maxIter, bool p_isFeatNorm)
             : trainMatFile(p_trainMatFile), testMatFile(p_testMatFile),
             valMatFile(p_valMatFile), itemFeatureFile(p_itemFeatureFile),
-            l2Reg(p_l2Reg), nucReg(p_nucReg), learnRate(p_learnRate),
+            l2Reg(p_l2Reg), wReg(p_wReg), nucReg(p_nucReg), learnRate(p_learnRate),
             rank(p_rank), seed(p_seed), pcSamples(p_pcSamples),
             maxIter(p_maxIter), isFeatNorm(p_isFeatNorm) {}
     
@@ -82,9 +83,12 @@ class Data {
       std::cout << "\nval nrows: " << valMat->nrows << " ncols: "  
         << valMat->ncols;
       std::cout << "\nitems: " << itemFeatMat->nrows << " nFeat: " << itemFeatMat->ncols;
+      std::cout << "\nusers: " << uFAccumMat->nrows << " nFeat: " << uFAccumMat->ncols;
       std::cout << "\nnTestItems: " << testItems.size();
       std::cout << "\nnValItems: " << valItems.size();
       std::cout << "\ntrainItems: " << trainItems.size() << std::endl;
+    
+      
     }
 
     Data(const Params& params) {

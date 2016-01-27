@@ -12,8 +12,8 @@ ModelFactMat::ModelFactMat(const Params &params, int nFeatures)
         V(i, j) = (float)std::rand()/ (float)(1.0 + RAND_MAX);
     }
   }
-  std::cout << "\nU dim: " << U.rows() << " " << U.cols();
-  std::cout << "\nV dim: " << V.rows() << " " << V.cols();
+  std::cout << "\nU dim: " << U.rows() << " " << U.cols() << " U norm: " << U.norm();
+  std::cout << "\nV dim: " << V.rows() << " " << V.cols() << " V norm: " << V.norm();
 }
 
 

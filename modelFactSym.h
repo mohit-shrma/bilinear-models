@@ -6,7 +6,6 @@
 class ModelFactSym: public Model {
   
   public:
-    Eigen::MatrixXf U;
     ModelFactSym(const Params &params, int nFeatures);
     
     virtual float estPosRating(int u, int item, const Data& data,

@@ -7,7 +7,6 @@
 class ModelFullMat: public Model {
   
   public:
-    Eigen::MatrixXf W;
     ModelFullMat(const Params &params, int nFeatures);
     
     virtual float estPosRating(int u, int item, const Data& data,

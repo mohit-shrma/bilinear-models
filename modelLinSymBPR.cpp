@@ -30,7 +30,7 @@ void ModelLinSymBPR::computewGrad(int u, int i, int j, const Data& data,
   float expCoeff = -1.0/(1.0 + exp(r_uij));
   wgrad = ((uFeat - iFeat).cwiseProduct(iFeat)) - uFeat.cwiseProduct(jFeat);
   wgrad *= expCoeff;
-  wgrad += 2.0*l2Reg*w;
+  wgrad += 2.0*wReg*w;
 }
 
 

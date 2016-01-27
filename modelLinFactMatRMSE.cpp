@@ -6,7 +6,7 @@ float ModelLinFactMatRMSE::objective(const Data& data) {
   int u, ii, item;
   float r_ui, r_ui_est, norm;
   Eigen::VectorXf pdt(rank);
-  float rmse = 0, uReg = 0, vReg = 0, wReg = 0, obj = 0;
+  float rmse = 0, uReg = 0, vReg = 0, w_reg = 0, obj = 0;
 
   for (u = 0; u <  data.trainMat->nrows; u++) {
     for (ii = data.trainMat->rowptr[u]; 
@@ -25,13 +25,13 @@ float ModelLinFactMatRMSE::objective(const Data& data) {
   vReg = norm*norm*l2Reg;
 
   norm = w.norm();
-  wReg = norm*norm*l2Reg;
+  w_reg = norm*norm*wReg;
 
   std::cout << "\nse: " << rmse << " uReg: " << uReg << " U norm: " << U.norm() 
-    << " vReg: " << vReg << " V norm: " << V.norm() << " w reg: " << wReg
+    << " vReg: " << vReg << " V norm: " << V.norm() << " w_reg: " << w_reg
     << " w norm: " << w.norm();
 
-  obj = rmse + uReg + vReg + wReg;
+  obj = rmse + uReg + vReg + w_reg;
   return obj;
 }
 
@@ -62,7 +62,7 @@ void ModelLinFactMatRMSE::computewGrad(Eigen::VectorXf& wgrad, Eigen::VectorXf& 
   r_ui_est  += (((uFeat - iFeat).transpose())*(iFeat.cwiseProduct(w)));
   wgrad = ((uFeat - iFeat).cwiseProduct(iFeat));
   wgrad *= 2.0*(r_ui_est - r_ui);
-  wgrad += 2.0*l2Reg*w;
+  wgrad += 2.0*wReg*w;
 }
 
 

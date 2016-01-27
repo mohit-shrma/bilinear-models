@@ -6,7 +6,6 @@
 class ModelLinear:public Model {
 
   public:
-    Eigen::VectorXf w;
     ModelLinear(const Params &params, int nFeatures);
   
     virtual float estPosRating(int u, int item, const Data& data,

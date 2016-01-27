@@ -152,8 +152,8 @@ void ModelFactRMSE::train(const Data &data, Model& bestModel) {
   int u, ii, item, nUserItems;
   float r_ui, r_ui_est;
    
-  std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
-  std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
+  std::cout <<"\nB4 Train Objective: " << objective(data);
+  std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data);
 
   for (int iter = 0; iter < maxIter; iter++) {
     for (int subIter = 0; subIter < trainNNZ; subIter++) {

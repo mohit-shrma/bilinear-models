@@ -129,10 +129,15 @@ void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row,
   
   int colInd;
   float val;
-  
+
+  /*
   if (mat->ncols != W.rows()) {
-    std::cerr << "\nspVecMatPdt: dimensions dont match: " << mat->ncols << " " << W.rows() << std::endl;
+    std::cerr << "\nspVecMatPdt: dimensions dont match: " << mat->ncols 
+      << " " << W.rows() << " (" << mat->nrows << "," << mat->ncols <<") "
+      << " (" << W.rows() << "," << W.cols() << ")" << std::endl;
+    exit(0);
   }
+  */
 
   pdt.fill(0);
   //parse sparse vector

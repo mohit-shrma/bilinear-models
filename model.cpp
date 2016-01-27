@@ -3,6 +3,7 @@
 Model::Model(const Params &params, int p_nFeatures) {
   nFeatures = p_nFeatures;
   l2Reg     = params.l2Reg;
+  wReg      = params.wReg;
   nucReg    = params.nucReg;
   learnRate = params.learnRate;
   rank      = params.rank;
@@ -200,12 +201,14 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
 
     uRecalls[u] = recall_u;
     uCount++;
+   
     /*
-    if (uCount % 100 == 0) {
+    if (uCount % 500 == 0) {
       std::cout << "\nustart: " << uStart << " uEnd: " << uEnd << " uCount: " 
         << uCount << std::endl;
     }
     */
+    
   }
    
 }

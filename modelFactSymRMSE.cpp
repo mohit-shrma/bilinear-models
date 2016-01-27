@@ -116,15 +116,15 @@ void ModelFactSymRMSE::train(const Data& data, Model& bestModel) {
       //r_ui_est
       r_ui_est = f_iT_U.dot(f_uT_U - f_iT_U);
 
-      //uFeat = data.uFeatAcuum.row(u);
-      //extractFeat(data.itemFeatMat, item, iFeat);
+      uFeat = data.uFeatAcuum.row(u);
+      extractFeat(data.itemFeatMat, item, iFeat);
 
       //perform grad check
       //gradCheck(Ugrad, Vgrad, iFeat, uFeat, U, V, r_ui);
 
       //compute U gradient
-      //computeUGrad(Ugrad, iFeat, uFeat, r_ui);
-      computeUSpGrad(Ugrad, data, r_ui, r_ui_est, u, item, f_iT_U, f_uT_U);
+      computeUGrad(Ugrad, iFeat, uFeat, r_ui);
+      //computeUSpGrad(Ugrad, data, r_ui, r_ui_est, u, item, f_iT_U, f_uT_U);
 
       //update U
       U -= learnRate*Ugrad;

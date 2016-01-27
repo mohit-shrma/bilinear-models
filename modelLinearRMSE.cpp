@@ -6,7 +6,7 @@ float ModelLinearRMSE::objective(const Data& data) {
   int u, ii, item;
   float r_ui, r_ui_est, norm;
   Eigen::VectorXf pdt(rank);
-  float rmse = 0, wReg = 0, obj = 0;
+  float rmse = 0, w_reg = 0, obj = 0;
 
   for (u = 0; u < data.trainMat->nrows; u++) {
     for (ii = data.trainMat->rowptr[u]; 
@@ -19,11 +19,11 @@ float ModelLinearRMSE::objective(const Data& data) {
   }
  
   norm = w.norm();
-  wReg = norm*norm*l2Reg;
+  w_reg = norm*norm*wReg;
 
-  std::cout << "\nse: " << rmse << " wReg: " << wReg << " w norm: " << w.norm(); 
+  std::cout << "\nse: " << rmse << " w_reg: " << w_reg << " w norm: " << w.norm(); 
 
-  obj = rmse + wReg;
+  obj = rmse + w_reg;
   return obj;
 }
 
@@ -76,7 +76,7 @@ void ModelLinearRMSE::train(const Data& data, Model& bestModel) {
       //r_ui_est
       r_ui_est = ((uFeat - iFeat).transpose())*(iFeat.cwiseProduct(w));
       wgrad = 2.0*(r_ui_est - r_ui)*iFeat.cwiseProduct(uFeat - iFeat);
-      wgrad += 2.0*l2Reg*w;
+      wgrad += 2.0*wReg*w;
 
       //update U
       w -= learnRate*wgrad;

@@ -156,10 +156,10 @@ void ModelFactBPR::train(const Data &data, Model& bestModel) {
   std::array<int, 3> triplet;
  
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
-  std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+  //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
   for (int iter = 0; iter < maxIter; iter++) {
     for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
-    //for (int subIter = 0; subIter < 10; subIter++) {
+    //for (int subIter = 0; subIter < 10000; subIter++) {
         
       //sample triplet
       triplet = data.sampleTriplet();
@@ -167,9 +167,9 @@ void ModelFactBPR::train(const Data &data, Model& bestModel) {
       i = triplet[1];
       j = triplet[2];
       
-      uFeat = data.uFeatAcuum.row(u); 
-      extractFeat(data.itemFeatMat, i, iFeat);
-      extractFeat(data.itemFeatMat, j, jFeat);
+      //uFeat = data.uFeatAcuum.row(u); 
+      //extractFeat(data.itemFeatMat, i, iFeat);
+      //extractFeat(data.itemFeatMat, j, jFeat);
 
       //gradCheck(u, i, j, Ugrad, Vgrad, data, uFeat, iFeat, jFeat);
 
@@ -192,20 +192,19 @@ void ModelFactBPR::train(const Data &data, Model& bestModel) {
       r_uij_est = f_iT_V.dot(f_uT_U - f_iT_U) - f_jT_V.dot(f_uT_U);
 
       //compute U gradient
-      //computeUGrad(u, i, j, data, Ugrad, iFeat, jFeat, uFeat);
-      computeUSpGrad(u, i, j, r_uij_est, data, Ugrad, f_iT_V, f_jT_V, 
-          f_u_f_i_diff);
+      computeUGrad(u, i, j, data, Ugrad, iFeat, jFeat, uFeat);
+      //computeUSpGrad(u, i, j, r_uij_est, data, Ugrad, f_iT_V, f_jT_V, 
+      //    f_u_f_i_diff);
       //update U
       U -= learnRate*Ugrad;
 
       //compute V gradient
       f_jT_V = f_uT_U - f_iT_U;
-      //computeVGrad(u, i, j, data, Vgrad, iFeat, jFeat, uFeat);
-      computeVSpGrad(u, i, j, r_uij_est, data, Vgrad, f_uT_U, f_jT_V);
+      computeVGrad(u, i, j, data, Vgrad, iFeat, jFeat, uFeat);
+      //computeVSpGrad(u, i, j, r_uij_est, data, Vgrad, f_uT_U, f_jT_V);
       //update V
       V -= learnRate*Vgrad;
     } 
-    
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {
@@ -214,10 +213,14 @@ void ModelFactBPR::train(const Data &data, Model& bestModel) {
         break;
       }
       std::cout << std::endl <<"iter: " << iter << " val recall: " << prevRecall
-        << " best recall: " << bestRecall;
+        << " best recall: " << bestRecall << " U norm: " << U.norm()
+        << " V norm: " << V.norm();
     }
   
   }
+      std::cout << std::endl << " val recall: " << prevRecall
+        << " best recall: " << bestRecall << " U norm: " << U.norm()
+        << " V norm: " << V.norm();
   
 }
 

@@ -16,9 +16,14 @@
 class Model {
   
   public:
+    Eigen::MatrixXf W;
+    Eigen::MatrixXf U;
+    Eigen::MatrixXf V;
+    Eigen::VectorXf w;
     int nFeatures;
     
     float l2Reg;
+    float wReg;
     float nucReg;
     float learnRate;
     float pcSamples;
