@@ -9,7 +9,6 @@
 #include "mathUtil.h"
 #include "const.h"
 #include "datastruct.h"
-#include "model.h"
 #include "GKlib.h"
 #include "io.h"
 

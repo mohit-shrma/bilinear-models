@@ -23,10 +23,12 @@ float ModelFullMat::estPosRating(int u, int item, const Data& data,
   float r_ui = 0;
   pdt.fill(0);
 
-  //compute dot product of mat and sparse vector 
+  //Wf_i:compute dot product of mat and sparse vector 
   matSpVecPdt(W, data.itemFeatMat, item, pdt);
+
   //f_u^TWf_i 
   r_ui = vecSpVecDot(pdt, data.uFAccumMat, u);
+
   //-f_i^TWf_i
   r_ui -= vecSpVecDot(pdt, data.itemFeatMat, item);
 
@@ -40,7 +42,7 @@ float ModelFullMat::estNegRating(int u, int item, const Data& data,
   float r_ui = 0;
   pdt.fill(0);
 
-  //compute dot product of mat and sparse vector 
+  //Wf_i: compute dot product of mat and sparse vector 
   matSpVecPdt(W, data.itemFeatMat, item, pdt);
   r_ui = vecSpVecDot(pdt, data.uFAccumMat, u);
 

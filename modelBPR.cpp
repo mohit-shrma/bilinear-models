@@ -11,18 +11,15 @@ void ModelBPR::computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
   r_uij = r_ui - r_uj;
    
   Wgrad.fill(0);
-  //reset Wgrad to gradient of l2 reg
-  if (r_uij < 0) {
-    expCoeff = 1.0/(1.0 + exp(r_uij));  
-    //need to update W as j has higher preference
-    Wgrad = 2.0*l2Reg*W;
-    Wgrad -= expCoeff*((uFeat - iFeat)*iFeat.transpose()
-                      - uFeat*jFeat.transpose());
-  } 
+  expCoeff = -1.0/(1.0 + exp(r_uij));  
+  //need to update W as j has higher preference
+  Wgrad = ((uFeat - iFeat)*iFeat.transpose()
+                    - uFeat*jFeat.transpose());
+  Wgrad *= expCoeff;
+  Wgrad += 2.0*l2Reg*W;
 }
 
 
-//TODO:verify
 void ModelBPR::computeBPRSparseGrad(int u, int i, int j, 
     Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data) {
   
@@ -33,27 +30,25 @@ void ModelBPR::computeBPRSparseGrad(int u, int i, int j,
   r_uij = r_ui - r_uj;
    
   Wgrad.fill(0);
-  if (r_uij < 0) {
-    //need to update W as j has higher preference
-    expCoeff = 1.0/(1.0 + exp(r_uij));  
- 
-    //-expCoeff*f_u*f_i^T
-    updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, i, 
-        -1);
+  //need to update W as j has higher preference
+  expCoeff = 1.0/(1.0 + exp(r_uij));  
 
-    //expCoeff*f_u*f_j^T
-    updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, j, 
-        1);
+  //-f_u*f_i^T
+  updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, i, 
+      -1);
 
-    //expCoeff*f_i*f_i^T
-    updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, i, data.itemFeatMat, i, 
-        1);
-    
-    Wgrad *= expCoeff;
-    
-    //add Wgrad to gradient of l2 reg
-    Wgrad += 2.0*l2Reg*W;
-  }
+  //f_u*f_j^T
+  updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, j, 
+      1);
+
+  //f_i*f_i^T
+  updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, i, data.itemFeatMat, i, 
+      1);
+  
+  Wgrad *= expCoeff;
+  
+  //add Wgrad to gradient of l2 reg
+  Wgrad += 2.0*l2Reg*W;
 
 }
 
@@ -127,8 +122,11 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   std::array<int, 3> triplet;
  
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
+  std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
 
+  std::chrono::time_point<std::chrono::system_clock> start, end;
   for (int iter = 0; iter < maxIter; iter++) {
+    start = std::chrono::system_clock::now();
     for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
         
       //sample triplet
@@ -139,14 +137,16 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       
       //compute gradient
       //gradCheck(uFeat, iFeat, jFeat, Wgrad); 
-      computeBPRGrad(uFeat, iFeat, jFeat, Wgrad);
-      //computeBPRSparseGrad(triplet[0], triplet[1], triplet[2], Wgrad, pdt, 
-      //    data);
+      //computeBPRGrad(uFeat, iFeat, jFeat, Wgrad);
+      computeBPRSparseGrad(triplet[0], triplet[1], triplet[2], Wgrad, pdt, 
+          data);
 
       //update W
       W -= learnRate*Wgrad;
     } 
     
+    end = std::chrono::system_clock::now();
+    std::chrono::duration<double> duration = end - start;
     //TODO:nuclear norm projection on each triplet or after all sub-iters
     performNucNormProjSVDLib(W, rank);
     
@@ -157,7 +157,8 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
         break;
       }
       std::cout << "\niter: " << iter << " val recall: " << prevRecall
-        << " best recall: " << bestRecall << std::endl;
+        << " best recall: " << bestRecall << " duration: " 
+        << duration.count() << std::endl;
     }
   
   }
