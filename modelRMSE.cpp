@@ -151,16 +151,11 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
         }
       }
       
-      //sample a pos rated item
+      //sample a rated item
       nUserItems = data.trainMat->rowptr[u+1] - data.trainMat->rowptr[u];
-      while (1) {
-        ii = std::rand()%nUserItems + data.trainMat->rowptr[u];
-        item = data.trainMat->rowind[ii];
-        r_ui = data.trainMat->rowval[ii];
-        if (r_ui > 0) {
-          break;
-        }
-      }
+      ii = std::rand()%nUserItems + data.trainMat->rowptr[u];
+      item = data.trainMat->rowind[ii];
+      r_ui = data.trainMat->rowval[ii];
       
       //uFeat = data.uFeatAcuum.row(u);
       //extractFeat(data.itemFeatMat, item, iFeat);
@@ -178,7 +173,7 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
     }
     endSub = std::chrono::system_clock::now(); 
     std::chrono::duration<double> durationSub =  (endSub - startSub) ;
-    std::cout << "\nsvd duration: " << durationSub.count();
+    std::cout << "\nduration: " << durationSub.count();
       
     //nuclear norm projection after all sub-iters
     //performNucNormProj(W, nucReg);

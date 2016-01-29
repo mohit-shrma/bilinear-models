@@ -57,7 +57,6 @@ void ModelFactSymRMSE::computeUSpGrad(Eigen::MatrixXf& Ugrad, const Data& data,
 }
 
 
-//TODO: make sure correct model is copied into best model
 void ModelFactSymRMSE::train(const Data& data, Model& bestModel) {
   std::cout << "\nModelFactSymRMSE::train";
 
@@ -93,16 +92,11 @@ void ModelFactSymRMSE::train(const Data& data, Model& bestModel) {
         }
       }
       
-      //sample a pos rated item
+      //sample a rated item
       nUserItems = data.trainMat->rowptr[u+1] - data.trainMat->rowptr[u];
-      while (1) {
-        ii = std::rand()%nUserItems + data.trainMat->rowptr[u];
-        item = data.trainMat->rowind[ii];
-        r_ui = data.trainMat->rowval[ii];
-        if (r_ui > 0) {
-          break;
-        }
-      }
+      ii = std::rand()%nUserItems + data.trainMat->rowptr[u];
+      item = data.trainMat->rowind[ii];
+      r_ui = data.trainMat->rowval[ii];
      
       //compute f_u^TU
       spVecMatPdt(U, data.uFAccumMat, u, f_uT_U);
