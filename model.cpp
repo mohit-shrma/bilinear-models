@@ -43,6 +43,7 @@ bool Model::isTerminateModel(Model& bestModel, const Data& data, int iter,
   }
 
   if (0 == iter) {
+    bestModel = *this;
     bestRecall = currRecall;
     bestIter = iter;
   }
