@@ -67,7 +67,6 @@ void performNucNormProjSVDLib(Eigen::MatrixXf& W, int rank) {
     }
   }
   
-  //TODO: verify
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < ncols; j++) {
       W(i,j) = 0; 
@@ -76,8 +75,6 @@ void performNucNormProjSVDLib(Eigen::MatrixXf& W, int rank) {
       }
     }
   }
-
-
 
   //free 
   svdFreeDMat(dW);
@@ -161,12 +158,12 @@ void updateMatWSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1,
   int ii1, ii2;
   float val1, val2;
 
-  for (ii1 = mat1->rowptr[row1]; ii1 < mat1->rowptr[row1+1]; ii1++) {
-    ind1 = mat1->rowind[ii1];
-    val1 = mat1->rowval[ii1];
-    for (ii2 = mat2->rowptr[row2]; ii2 < mat2->rowptr[row2+1]; ii2++) {
-      ind2 = mat2->rowind[ii2];
-      val2 = mat2->rowval[ii2];
+  for (ii2 = mat2->rowptr[row2]; ii2 < mat2->rowptr[row2+1]; ii2++) {
+    ind2 = mat2->rowind[ii2];
+    val2 = mat2->rowval[ii2];
+    for (ii1 = mat1->rowptr[row1]; ii1 < mat1->rowptr[row1+1]; ii1++) {
+      ind1 = mat1->rowind[ii1];
+      val1 = mat1->rowval[ii1];
       W(ind1, ind2) += scalar*val1*val2;
     }
   }
