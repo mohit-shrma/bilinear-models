@@ -56,6 +56,8 @@ class Model {
     void computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd, 
       const Data& data, int N, std::unordered_set<int>& items, 
       std::vector<bool>& isTestUser, std::vector<float>& uRecalls);
+    int invCount(std::vector<std::array<int,3>> sampTriplets, 
+      const Data& data, Eigen::VectorXf& pdt);
 
 };
 

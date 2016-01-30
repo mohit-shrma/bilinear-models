@@ -308,3 +308,22 @@ float Model::computeRMSE(gk_csr_t *mat, const Data& data) {
   return rmse;
 }
 
+int Model::invCount(std::vector<std::array<int,3>> sampTriplets, 
+    const Data& data, Eigen::VectorXf& pdt) {
+  
+  int u, i, j;
+  int invCount = 0;
+  float r_ui, r_uj;
+
+  for(auto&& triplet: sampTriplets) {
+    u = triplet[0];
+    i = triplet[1];
+    j = triplet[2];
+    r_ui = estPosRating(u, i, data, pdt);
+    r_uj = estNegRating(u, j, data, pdt);
+    if (r_ui < r_uj) {
+      invCount++;
+    }
+  }
+  return invCount;
+}
