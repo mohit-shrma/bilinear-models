@@ -37,7 +37,7 @@ int ModelFullHinge::estRatingsforUser(int u, const Data& data,
 
 void ModelFullHinge::computeGrad(int u, Eigen::MatrixXf& Wgrad, 
     Eigen::MatrixXf& gradNegHull, const Data& data, int maxNegItem, 
-    std::Map<int, float>& itemRatings) {
+    std::map<int, float>& itemRatings) {
   int ii, item, maxNegItemCount, posItemCount;
   gk_csr_t* mat = data.trainMat;
   float maxNegRat, r_ui;
@@ -63,7 +63,7 @@ void ModelFullHinge::computeGrad(int u, Eigen::MatrixXf& Wgrad,
   }
   gradNegHull = gradNegHull/maxNegItemCount;
 
-  Wgrad.fill(0)
+  Wgrad.fill(0);
   posItemCount = 0;
   for (ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
     item = mat->rowind[ii];
@@ -74,11 +74,9 @@ void ModelFullHinge::computeGrad(int u, Eigen::MatrixXf& Wgrad,
       //grad if r_ui_est < r_ujmax + 1
       if (itemRatings[item] < maxNegRat + 1) {
         //-f_u*f_i^T
-        updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, item,
-            item, -1);
+        updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, item, -1);
         //f_i*f_i^T
-        updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, item, data.itemFeatMat, item,
-            item, +1);
+        updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, item, data.itemFeatMat, item, 1);
         //add convex hull of neg items to gradient
         Wgrad += gradNegHull;
       }
@@ -96,7 +94,7 @@ void ModelFullHinge::train(const Data& data, Model& bestModel) {
 
   std::cout << "\nModelFullHinge::train" << std::endl;
 
-  int bestIter;
+  int bestIter, u;
   Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
   Eigen::MatrixXf gradNegHull(nFeatures, nFeatures);  
   Eigen::VectorXf iFeat(nFeatures);
@@ -105,7 +103,6 @@ void ModelFullHinge::train(const Data& data, Model& bestModel) {
   Eigen::VectorXf pdt(nFeatures);
   float bestRecall, prevRecall;
   int trainNNZ = getNNZ(data.trainMat); 
-  std::array<int, 3> triplet;
  
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
   //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
@@ -117,7 +114,7 @@ void ModelFullHinge::train(const Data& data, Model& bestModel) {
   for (int iter = 0; iter < maxIter; iter++) {
     start = std::chrono::system_clock::now();
     //for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
-    for (int subIter = 0; subIter < 2*data.nUsers; subIter++) {
+    for (int subIter = 0; subIter < data.nUsers; subIter++) {
         
       //sample user
       while (1) {
@@ -139,7 +136,7 @@ void ModelFullHinge::train(const Data& data, Model& bestModel) {
       //compute gradient
       //gradCheck(uFeat, iFeat, jFeat, Wgrad); 
       //computeBPRGrad(uFeat, iFeat, jFeat, Wgrad);
-      computeSparseGrad(Wgrad, pdt, data);
+      computeGrad(u, Wgrad, gradNegHull, data, maxNegItem, itemRatings);
 
       //update W
       W -= learnRate*Wgrad;
