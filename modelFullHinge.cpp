@@ -86,7 +86,7 @@ void ModelFullHinge::computeGrad(int u, Eigen::MatrixXf& Wgrad,
   }
 
   Wgrad = Wgrad/posItemCount;
-
+  Wgrad += 2.0*l2Reg*W;
 }
 
 
