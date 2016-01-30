@@ -83,6 +83,66 @@ void performNucNormProjSVDLib(Eigen::MatrixXf& W, int rank) {
 }
 
 
+//perform nuclear norm projection using svdlib with nucnorm coeff
+void performNucNormProjSVDLibWReg(Eigen::MatrixXf& W, float gamma) {
+  
+  int nrows = W.rows();
+  int ncols = W.cols();
+  int rank = 100;
+  int qrank, i;
+
+  //create empty dense matrix 
+  DMat dW = svdNewDMat(nrows, ncols);
+  //assign value in row major order
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < ncols; j++) {
+      dW->value[i][j] = W(i,j);
+    }
+  }
+
+  //convert DMat to sparse
+  SMat sW = svdConvertDtoS(dW);
+
+  //compute top-rank svd
+  SVDRec svd = svdLAS2A(sW, rank);
+
+  std::cout << "\nDimensionality: " << svd->d;
+ 
+  //find rank at which singular values dont exceed gamma
+  for (i = 0; i < rank; i++) {
+    if (svd->S[i] < gamma) {
+      break;
+    }
+  }
+  qrank = i;
+
+  if (qrank == 0) {
+    std::cerr << "\nperformNucNormProjSVDLibWReg: all singular values below gamma";
+  }
+
+  //multiply singular values with Vt
+  for (i = 0; i < qrank; i++) {
+    for (int j = 0; j < ncols; j++) {
+      svd->Vt->value[i][j] *= svd->S[i];  
+    }
+  }
+  
+  for (i = 0; i < nrows; i++) {
+    for (int j = 0; j < ncols; j++) {
+      W(i,j) = 0; 
+      for (int k = 0; k < qrank; k++) {
+        W(i,j) += svd->Ut->value[k][i]*svd->Vt->value[k][j]; 
+      }
+    }
+  }
+
+  //free 
+  svdFreeDMat(dW);
+  svdFreeSMat(sW);
+  svdFreeSVDRec(svd);
+}
+
+
 float vecSpVecDot(Eigen::VectorXf& vec, gk_csr_t *mat, int row) {
   float dotp = 0;
   int colInd;

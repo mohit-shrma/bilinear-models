@@ -11,6 +11,7 @@ extern "C" {
 float vecSpVecDot(Eigen::VectorXf& vec, gk_csr_t *mat, int row);
 void performNucNormProj(Eigen::MatrixXf& W, float gamma);
 void performNucNormProjSVDLib(Eigen::MatrixXf& W, int rank);
+void performNucNormProjSVDLibWReg(Eigen::MatrixXf& W, float gamma);
 float sigmoid(float x);
 void matSpVecPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
     Eigen::VectorXf& pdt);
