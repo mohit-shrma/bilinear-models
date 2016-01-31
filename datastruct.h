@@ -5,6 +5,7 @@
 #include <fstream>
 #include <unordered_set>
 #include <array>
+#include "io.h"
 #include "util.h"
 #include "GKlib.h"
 #include "const.h"
@@ -129,38 +130,45 @@ class Data {
       uFeatAcuum = Eigen::MatrixXf::Zero(nUsers, nFeatures);
       int tempNNZ = 0;
       std::string fName = "featAccu.mat"; 
-      std::ofstream opMat(fName);
-      if (opMat.is_open()) {
-        //accumulate all user features
-        for (int u = 0; u < nUsers; u++) {
-          for (int ii = trainMat->rowptr[u]; ii < trainMat->rowptr[u+1];
-                ii++) {
-            int item = trainMat->rowind[ii];
-            float itemRating = trainMat->rowval[ii];
-            for (int k = itemFeatMat->rowptr[item];
-                 k < itemFeatMat->rowptr[item+1]; k++) {
-              //NOTE: multiplying by rating to make sure explicit '0' excluded
-              uFeatAcuum(u, itemFeatMat->rowind[k]) += itemRating*itemFeatMat->rowval[k];
+      
+      if (!isFileExist(fName.c_str())) {
+        std::cout << "\nUser accumulation file don't exists...";
+        std::ofstream opMat(fName);
+        if (opMat.is_open()) {
+          //accumulate all user features
+          for (int u = 0; u < nUsers; u++) {
+            for (int ii = trainMat->rowptr[u]; ii < trainMat->rowptr[u+1];
+                  ii++) {
+              int item = trainMat->rowind[ii];
+              float itemRating = trainMat->rowval[ii];
+              for (int k = itemFeatMat->rowptr[item];
+                   k < itemFeatMat->rowptr[item+1]; k++) {
+                //NOTE: multiplying by rating to make sure explicit '0' excluded
+                uFeatAcuum(u, itemFeatMat->rowind[k]) += itemRating*itemFeatMat->rowval[k];
+              }
             }
+            
+            for (int k = 0; k < nFeatures; k++) {
+              if (uFeatAcuum(u,k) > 0) {
+                opMat << k+1 << " " << uFeatAcuum(u, k) << " ";
+                tempNNZ++;
+              }
+            }
+
+            opMat << std::endl;
           }
+
+          //close op file
+          opMat.close();
           
-          for (int k = 0; k < nFeatures; k++) {
-            if (uFeatAcuum(u,k) > 0) {
-              opMat << k+1 << " " << uFeatAcuum(u, k) << " ";
-              tempNNZ++;
-            }
-          }
-
-          opMat << std::endl;
+          std::cout << "\nuFeatAccum NNZ: " << tempNNZ <<  " density: "
+            << (float)tempNNZ/float(nUsers*nFeatures)  << std::endl;
         }
-
-        std::cout << "\nuFeatAccum NNZ: " << tempNNZ <<  " density: "
-          << (float)tempNNZ/float(nUsers*nFeatures)  << std::endl;
-
-        uFAccumMat = gk_csr_Read((char*) fName.c_str(), GK_CSR_FMT_CSR, 1, 1);
-        gk_csr_CreateIndex(uFAccumMat, GK_CSR_COL);
-        std::cout << "\nnnz ufaccum: " << getNNZ(uFAccumMat);
       }
+      
+      uFAccumMat = gk_csr_Read((char*) fName.c_str(), GK_CSR_FMT_CSR, 1, 1);
+      gk_csr_CreateIndex(uFAccumMat, GK_CSR_COL);
+      std::cout << "\nnnz ufaccum: " << getNNZ(uFAccumMat);
     
       testItems     = getItemSet(testMat);
       trainItems    = getItemSet(trainMat);

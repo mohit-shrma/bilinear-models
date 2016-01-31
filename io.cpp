@@ -22,3 +22,9 @@ void dispSpVec(gk_csr_t *mat, int row) {
   }
 }
 
+
+bool isFileExist(const char *fileName) {
+  std::ifstream infile(fileName);
+  return infile.good();
+}
+
