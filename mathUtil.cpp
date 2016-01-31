@@ -88,8 +88,10 @@ void performNucNormProjSVDLibWReg(Eigen::MatrixXf& W, float gamma) {
   
   int nrows = W.rows();
   int ncols = W.cols();
-  int rank = 100;
-  int qrank, i;
+  int rank, qrank, i;
+
+  int minrowcol = W.rows() < W.cols() ? W.rows() : W.cols();
+  rank = minrowcol < 100? minrowcol:100;
 
   //create empty dense matrix 
   DMat dW = svdNewDMat(nrows, ncols);
@@ -117,8 +119,11 @@ void performNucNormProjSVDLibWReg(Eigen::MatrixXf& W, float gamma) {
   qrank = i;
 
   if (qrank == 0) {
-    std::cerr << "\nperformNucNormProjSVDLibWReg: all singular values below gamma";
+    std::cerr << "\nperformNucNormProjSVDLibWReg: all singular values below gamma"<< std::endl;
+    exit(0);
   }
+  
+  std::cout << "\nTrimmed rank = " << qrank;
 
   //multiply singular values with Vt
   for (i = 0; i < qrank; i++) {
