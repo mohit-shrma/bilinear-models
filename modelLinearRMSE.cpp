@@ -3,11 +3,11 @@
 
 float ModelLinearRMSE::objective(const Data& data) {
   
-  int u, ii, item;
+  int u, ii, item, nnz;
   float r_ui, r_ui_est, norm;
   Eigen::VectorXf pdt(rank);
   float rmse = 0, w_reg = 0, obj = 0;
-
+  nnz = 0;
   for (u = 0; u < data.trainMat->nrows; u++) {
     for (ii = data.trainMat->rowptr[u]; 
         ii < data.trainMat->rowptr[u+1]; ii++) {
@@ -15,15 +15,16 @@ float ModelLinearRMSE::objective(const Data& data) {
       r_ui_est = estPosRating(u, item, data, pdt);
       r_ui = data.trainMat->rowval[ii];
       rmse += (r_ui_est - r_ui)*(r_ui_est-r_ui);
+      nnz++;
     }
   }
  
   norm = w.norm();
   w_reg = norm*norm*wReg;
 
-  std::cout << "\nse: " << rmse << " w_reg: " << w_reg << " w norm: " << w.norm(); 
+  std::cout << "\nmse: " << rmse/nnz << " w_reg: " << w_reg << " w norm: " << w.norm(); 
 
-  obj = rmse + w_reg;
+  obj = rmse/nnz + w_reg;
   return obj;
 }
 

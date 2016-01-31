@@ -28,7 +28,7 @@ void ModelLinearBPR::train(const Data &data, Model& bestModel) {
   std::array<int, 3> triplet;
  
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
-  std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+  //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
   for (int iter = 0; iter < maxIter; iter++) {
     for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
     //for (int subIter = 0; subIter < 10000; subIter++) {
