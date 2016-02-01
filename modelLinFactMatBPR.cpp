@@ -76,7 +76,7 @@ void ModelLinFactMatBPR::train(const Data &data, Model& bestModel) {
       i = triplet[1];
       j = triplet[2];
       
-      uFeat = data.uFeatAcuum.row(u); 
+      extractFeat(data.uFAccumMat, u, uFeat);
       extractFeat(data.itemFeatMat, i, iFeat);
       extractFeat(data.itemFeatMat, j, jFeat);
 

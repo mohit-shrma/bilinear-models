@@ -110,7 +110,7 @@ void ModelFactSymRMSE::train(const Data& data, Model& bestModel) {
       //r_ui_est
       r_ui_est = f_iT_U.dot(f_uT_U - f_iT_U);
 
-      uFeat = data.uFeatAcuum.row(u);
+      extractFeat(data.uFAccumMat, u, uFeat);
       extractFeat(data.itemFeatMat, item, iFeat);
 
       //perform grad check

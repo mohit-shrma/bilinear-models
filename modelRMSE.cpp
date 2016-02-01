@@ -3,15 +3,15 @@
 
 float ModelRMSE::objective(const Data& data) {
   
-  int u, ii, item;
+  int u, ii, item, nnz;
   float r_ui, r_ui_est, w_norm;
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf pdt(nFeatures);
-  float rmse = 0, uReg = 0, nucNormReg = 0, nucNorm = 0, obj = 0;
-
+  float rmse = 0, WReg = 0, nucNormReg = 0, nucNorm = 0, obj = 0;
+  nnz = 0;
   for (u = 0; u < data.trainMat->nrows; u++) {
-    uFeat = data.uFeatAcuum.row(u);
+    extractFeat(data.uFAccumMat, u, uFeat);
     for (ii = data.trainMat->rowptr[u]; 
         ii < data.trainMat->rowptr[u+1]; ii++) {
       item = data.trainMat->rowind[ii];
@@ -20,10 +20,12 @@ float ModelRMSE::objective(const Data& data) {
       r_ui_est = estPosRating(u, item, data, pdt);
       r_ui = data.trainMat->rowval[ii];
       rmse += (r_ui_est - r_ui)*(r_ui_est-r_ui);
+      nnz++;
     }
-    w_norm = W.norm();
-    uReg += l2Reg*w_norm*w_norm;
   }
+    
+  w_norm = W.norm();
+  WReg = l2Reg*w_norm*w_norm;
  
   /*
   //compute thin svd
@@ -36,7 +38,7 @@ float ModelRMSE::objective(const Data& data) {
   nucNormReg = nucNorm*nucReg;
   */
 
-  obj += rmse + uReg + nucNormReg;
+  obj += rmse/nnz + WReg + nucNormReg;
   
   return obj;
 }
@@ -157,7 +159,7 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
       item = data.trainMat->rowind[ii];
       r_ui = data.trainMat->rowval[ii];
       
-      //uFeat = data.uFeatAcuum.row(u);
+      //extractFeat(data.uFAccumMat, u, uFeat);
       //extractFeat(data.itemFeatMat, item, iFeat);
 
       //compute gradient
@@ -173,18 +175,18 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
     }
     endSub = std::chrono::system_clock::now(); 
     std::chrono::duration<double> durationSub =  (endSub - startSub) ;
-    std::cout << "\nduration: " << durationSub.count();
+    //std::cout << "\nduration: " << durationSub.count();
       
     //nuclear norm projection after all sub-iters
-    //performNucNormProj(W, nucReg);
     std::chrono::time_point<std::chrono::system_clock> startSVD, endSVD;
     startSVD = std::chrono::system_clock::now();
     
-    performNucNormProjSVDLib(W, rank);
-    
+    //performNucNormProjSVDLib(W, rank);
+    performNucNormProjSVDLibWReg(W, nucReg);
+
     endSVD = std::chrono::system_clock::now(); 
     std::chrono::duration<double> durationSVD =  (endSVD - startSVD) ;
-    std::cout << "\nsvd duration: " << durationSVD.count();
+    //std::cout << "\nsvd duration: " << durationSVD.count();
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {

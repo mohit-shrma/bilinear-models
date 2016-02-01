@@ -165,10 +165,6 @@ void Model::computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd,
     //compute ratings over all testItems
     itemRatings.clear();
     for (const int &item: items) {
-      //extractFeat(data.itemFeatMat, item, iFeat);
-      //rating = data.uFeatAcuum.row(u)*W*iFeat;
-      //pdt = uFeatWPdt.row(u);
-      //rating = vecSpVecDot(pdt, data.itemFeatMat, item); 
       rating = estNegRating(u, item, data, pdt);
       itemRatings.push_back(std::make_pair(item, rating));
     }

@@ -90,9 +90,8 @@ void ModelLinSymRMSE::train(const Data &data, Model& bestModel) {
       item = data.trainMat->rowind[ii];
       r_ui = data.trainMat->rowval[ii];
      
-      uFeat = data.uFeatAcuum.row(u);
+      extractFeat(data.uFAccumMat, u, uFeat);
       extractFeat(data.itemFeatMat, item, iFeat);
-
 
       //compute U gradient
       computeUGrad(Ugrad, iFeat, uFeat, r_ui);

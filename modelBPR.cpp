@@ -131,9 +131,10 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
         
       //sample triplet
       triplet = data.sampleTriplet();
-      uFeat = data.uFeatAcuum.row(triplet[0]); 
-      extractFeat(data.itemFeatMat, triplet[1], iFeat);
-      extractFeat(data.itemFeatMat, triplet[2], jFeat);
+      
+      //extractFeat(data.uFAccumMat, triplet[0], uFeat);
+      //extractFeat(data.itemFeatMat, triplet[1], iFeat);
+      //extractFeat(data.itemFeatMat, triplet[2], jFeat);
       
       //compute gradient
       //gradCheck(uFeat, iFeat, jFeat, Wgrad); 
@@ -149,6 +150,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
     std::chrono::duration<double> duration = end - start;
     //TODO:nuclear norm projection on each triplet or after all sub-iters
     performNucNormProjSVDLib(W, rank);
+    //performNucNormProjSVDLibWReg(W, nucReg);
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {

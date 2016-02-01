@@ -17,14 +17,14 @@
 
 Params parse_cmd_line(int argc, char *argv[]) {
   
-  if (argc < 14) {
+  if (argc < 15) {
     std::cout  << "\nNot enough arguments";
     exit(0);
   } 
 
-  Params params(argv[1], argv[2], argv[3], argv[4],
-      atof(argv[5]), atof(argv[6]), atof(argv[7]), atof(argv[8]), atoi(argv[9]),
-      atoi(argv[10]), atof(argv[11]), atoi(argv[12]), atoi(argv[13]));
+  Params params(argv[1], argv[2], argv[3], argv[4], argv[5],
+      atof(argv[6]), atof(argv[7]), atof(argv[8]), atof(argv[9]), atoi(argv[10]),
+      atoi(argv[11]), atof(argv[12]), atoi(argv[13]), atoi(argv[14]));
   
   return params;
 }

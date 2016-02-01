@@ -17,6 +17,7 @@ class Params {
     char *testMatFile;
     char *valMatFile;
     char *itemFeatureFile;
+    char *featAccumFile;
 
     float l2Reg;
     float wReg;
@@ -31,11 +32,12 @@ class Params {
     bool isFeatNorm;
 
     Params(char *p_trainMatFile, char *p_testMatFile, char *p_valMatFile,
-            char *p_itemFeatureFile, 
+            char *p_itemFeatureFile, char *p_featAccumFile, 
             float p_l2Reg, float p_wReg, float p_nucReg, float p_learnRate, int p_rank,
             int p_seed, float p_pcSamples, int p_maxIter, bool p_isFeatNorm)
-            : trainMatFile(p_trainMatFile), testMatFile(p_testMatFile),
+            : trainMatFile(p_trainMatFile), testMatFile(p_testMatFile), 
             valMatFile(p_valMatFile), itemFeatureFile(p_itemFeatureFile),
+            featAccumFile(p_featAccumFile), 
             l2Reg(p_l2Reg), wReg(p_wReg), nucReg(p_nucReg), learnRate(p_learnRate),
             rank(p_rank), seed(p_seed), pcSamples(p_pcSamples),
             maxIter(p_maxIter), isFeatNorm(p_isFeatNorm) {}
@@ -45,7 +47,9 @@ class Params {
       std::cout << "\ntestMatFile: " << testMatFile;
       std::cout << "\nvalMatFile: " << valMatFile;
       std::cout << "\nitemFeatureFile: " << itemFeatureFile;
+      std::cout << "\nfeatAccumFile: " << featAccumFile;
       std::cout << "\nl2Reg: " << l2Reg;
+      std::cout << "\nwReg: " << wReg;
       std::cout << "\nnucReg: " << nucReg;
       std::cout << "\nlearnRate: " << learnRate;
       std::cout << "\nrank: " << rank;
@@ -69,7 +73,6 @@ class Data {
     gk_csr_t *itemFeatMat;
     gk_csr_t *uFAccumMat;
 
-    Eigen::MatrixXf uFeatAcuum; 
     std::unordered_set<int> testItems;
     std::unordered_set<int> valItems;
     std::unordered_set<int> trainItems;
@@ -126,50 +129,52 @@ class Data {
         gk_csr_CreateIndex(itemFeatMat, GK_CSR_COL);
         nFeatures = itemFeatMat->ncols;
       }
-      
-      uFeatAcuum = Eigen::MatrixXf::Zero(nUsers, nFeatures);
-      int tempNNZ = 0;
-      std::string fName = "featAccu.mat"; 
-      
-      if (!isFileExist(fName.c_str())) {
-        std::cout << "\nUser accumulation file don't exists...";
-        std::ofstream opMat(fName);
-        if (opMat.is_open()) {
-          //accumulate all user features
-          for (int u = 0; u < nUsers; u++) {
-            for (int ii = trainMat->rowptr[u]; ii < trainMat->rowptr[u+1];
-                  ii++) {
-              int item = trainMat->rowind[ii];
-              float itemRating = trainMat->rowval[ii];
-              for (int k = itemFeatMat->rowptr[item];
-                   k < itemFeatMat->rowptr[item+1]; k++) {
-                //NOTE: multiplying by rating to make sure explicit '0' excluded
-                uFeatAcuum(u, itemFeatMat->rowind[k]) += itemRating*itemFeatMat->rowval[k];
+     
+      if (NULL != params.featAccumFile) {
+        if (!isFileExist(params.featAccumFile)) {
+          std::cout << "\nUser accumulation file don't exists..." << std::endl;
+          std::ofstream opMat(params.featAccumFile);
+          if (opMat.is_open()) {
+            Eigen::MatrixXf uFeatAcuum = Eigen::MatrixXf::Zero(nUsers, nFeatures);
+            int tempNNZ = 0;
+            std::cout << "\nWriting file containing user accumulated featues..."
+              << std::endl;
+            //accumulate all user features
+            for (int u = 0; u < nUsers; u++) {
+              for (int ii = trainMat->rowptr[u]; ii < trainMat->rowptr[u+1];
+                    ii++) {
+                int item = trainMat->rowind[ii];
+                float itemRating = trainMat->rowval[ii];
+                for (int k = itemFeatMat->rowptr[item];
+                     k < itemFeatMat->rowptr[item+1]; k++) {
+                  //NOTE: multiplying by rating to make sure explicit '0' excluded
+                  uFeatAcuum(u, itemFeatMat->rowind[k]) += itemRating*itemFeatMat->rowval[k];
+                }
               }
+              
+              for (int k = 0; k < nFeatures; k++) {
+                if (uFeatAcuum(u,k) > 0) {
+                  opMat << k+1 << " " << uFeatAcuum(u, k) << " ";
+                  tempNNZ++;
+                }
+              }
+
+              opMat << std::endl;
             }
+
+            //close op file
+            opMat.close();
             
-            for (int k = 0; k < nFeatures; k++) {
-              if (uFeatAcuum(u,k) > 0) {
-                opMat << k+1 << " " << uFeatAcuum(u, k) << " ";
-                tempNNZ++;
-              }
-            }
-
-            opMat << std::endl;
+            std::cout << "\nuFeatAccum NNZ: " << tempNNZ <<  " density: "
+              << (float)tempNNZ/float(nUsers*nFeatures)  << std::endl;
           }
-
-          //close op file
-          opMat.close();
           
-          std::cout << "\nuFeatAccum NNZ: " << tempNNZ <<  " density: "
-            << (float)tempNNZ/float(nUsers*nFeatures)  << std::endl;
-        }
+        }         
+        uFAccumMat = gk_csr_Read(params.featAccumFile, GK_CSR_FMT_CSR, 1, 1);
+        gk_csr_CreateIndex(uFAccumMat, GK_CSR_COL);
+        std::cout << "\nnnz ufaccum: " << getNNZ(uFAccumMat);
       }
-      
-      uFAccumMat = gk_csr_Read((char*) fName.c_str(), GK_CSR_FMT_CSR, 1, 1);
-      gk_csr_CreateIndex(uFAccumMat, GK_CSR_COL);
-      std::cout << "\nnnz ufaccum: " << getNNZ(uFAccumMat);
-    
+
       testItems     = getItemSet(testMat);
       trainItems    = getItemSet(trainMat);
       valItems      = getItemSet(valMat);
