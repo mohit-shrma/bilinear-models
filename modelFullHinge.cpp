@@ -17,7 +17,7 @@ int ModelFullHinge::estRatingsforUser(int u, const Data& data,
     r_ui = trainMat->rowval[ii];
     if (r_ui < 1) {
       r_ui_est = estNegRating(u, item, data, pdt);
-      itemRatings.insert(std::pair<int, float>(item, r_ui_est));
+      itemRatings[item] = r_ui_est;
       if (-1 == maxNegItem) {
         maxNegItem = item;
         maxNegRat = r_ui_est;
@@ -27,7 +27,7 @@ int ModelFullHinge::estRatingsforUser(int u, const Data& data,
       }
     } else {
       r_ui_est = estPosRating(u, item, data, pdt); 
-      itemRatings.insert(std::pair<int, float>(item, r_ui_est));
+      itemRatings[item] = r_ui_est;
     }
   }
 
@@ -35,12 +35,12 @@ int ModelFullHinge::estRatingsforUser(int u, const Data& data,
 }
 
 
-void ModelFullHinge::computeGrad(int u, Eigen::MatrixXf& Wgrad, 
+int ModelFullHinge::computeGrad(int u, Eigen::MatrixXf& Wgrad, 
     Eigen::MatrixXf& gradNegHull, const Data& data, int maxNegItem, 
     std::map<int, float>& itemRatings) {
-  int ii, item, maxNegItemCount, posItemCount;
+  int ii, item, maxNegItemCount, posItemCount, updItemCount;
   gk_csr_t* mat = data.trainMat;
-  float maxNegRat, r_ui;
+  float maxNegRat, r_ui, r_ui_est;
   
   //get max rating item
   maxNegRat = itemRatings[maxNegItem];
@@ -48,45 +48,44 @@ void ModelFullHinge::computeGrad(int u, Eigen::MatrixXf& Wgrad,
   //compute convex hull of max neg rated items
   gradNegHull.fill(0);
   maxNegItemCount = 0;
+  Wgrad.fill(0);
+  posItemCount = 0;
+  updItemCount = 0;
   for (ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
     item = mat->rowind[ii];
     r_ui = mat->rowval[ii];
+    r_ui_est = itemRatings[item];
     if (r_ui < 1) {
       //-ve item found
-      if (itemRatings[item] == maxNegRat) {
+      if (r_ui_est == maxNegRat) {
         //f_u*f_j^T
         updateMatWSpOuterPdt(gradNegHull, data.uFAccumMat, u, data.itemFeatMat,
             item, 1); 
         maxNegItemCount++;
       }
-    }
-  }
-  gradNegHull = gradNegHull/maxNegItemCount;
-
-  Wgrad.fill(0);
-  posItemCount = 0;
-  for (ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
-    item = mat->rowind[ii];
-    r_ui = mat->rowval[ii];
-    if (r_ui >= 1) {
-      //positively rated item
-      
+    }  else {
+      //positive rated item
       //grad if r_ui_est < r_ujmax + 1
-      if (itemRatings[item] < maxNegRat + 1) {
+      if (r_ui_est < maxNegRat + 1) {
         //-f_u*f_i^T
         updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, item, -1);
         //f_i*f_i^T
         updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, item, data.itemFeatMat, item, 1);
         //add convex hull of neg items to gradient
-        Wgrad += gradNegHull;
+        //Wgrad += gradNegHull;
+        updItemCount++;
       }
-
       posItemCount++;
     }
   }
+  
+  gradNegHull = gradNegHull/maxNegItemCount;
 
+  Wgrad += updItemCount*gradNegHull;
   Wgrad = Wgrad/posItemCount;
-  Wgrad += 2.0*l2Reg*W;
+  Wgrad += l2Reg*2*W;
+
+  return updItemCount;
 }
 
 
@@ -108,17 +107,25 @@ void ModelFullHinge::train(const Data& data, Model& bestModel) {
   //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
 
   std::map<int, float> itemRatings;
-  int maxNegItem;
+  std::map<int, int> uUpdCountMap;
+  int maxNegItem, uUpdCount;
+  std::set<int> invalidUsers;
 
   std::chrono::time_point<std::chrono::system_clock> start, end;
   for (int iter = 0; iter < maxIter; iter++) {
     start = std::chrono::system_clock::now();
     //for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
-    for (int subIter = 0; subIter < data.nUsers; subIter++) {
+    int uCount = 0;
+    for (int subIter = 0; subIter < 2*data.nUsers; subIter++) {
         
       //sample user
       while (1) {
         u = std::rand() % data.nUsers;
+        auto search = invalidUsers.find(u);
+        if (search != invalidUsers.end()) {
+          //found u in invalidUsers
+          continue;
+        }
         if (data.posTrainUsers.find(u) != data.posTrainUsers.end()) {
           //found u
           break;
@@ -128,7 +135,8 @@ void ModelFullHinge::train(const Data& data, Model& bestModel) {
       //estimate ratings for the item rated by user and get the maxNegItem
       maxNegItem = estRatingsforUser(u, data, itemRatings);
       if (-1 == maxNegItem) {
-        std::cerr << "\nNo max -ve item for user: " << u;
+        uCount++;
+        invalidUsers.insert(u);
         continue;
       }
 
@@ -136,16 +144,28 @@ void ModelFullHinge::train(const Data& data, Model& bestModel) {
       //compute gradient
       //gradCheck(uFeat, iFeat, jFeat, Wgrad); 
       //computeBPRGrad(uFeat, iFeat, jFeat, Wgrad);
-      computeGrad(u, Wgrad, gradNegHull, data, maxNegItem, itemRatings);
+      uUpdCount = computeGrad(u, Wgrad, gradNegHull, data, maxNegItem, itemRatings);
+      
+      uUpdCountMap[u] = uUpdCount;
 
       //update W
       W -= learnRate*Wgrad;
     } 
+  
+    int invCount = 0;
+    for (auto it = uUpdCountMap.begin(); it != uUpdCountMap.end(); ++it) {
+      invCount += it->second;
+    }
+
+    std::cerr << "\nNo max -ve item for users: " << invalidUsers.size()
+       << " uCount: " << uCount << " invCount: "<< invCount 
+       << " W norm: " << W.norm() << std::endl;
     
     end = std::chrono::system_clock::now();
     std::chrono::duration<double> duration = end - start;
-    //TODO:nuclear norm projection on each triplet or after all sub-iters
-    performNucNormProjSVDLib(W, rank);
+    
+    //nuclear norm projection after all sub-iters
+    //performNucNormProjSVDLib(W, rank);
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0) {
