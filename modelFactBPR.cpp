@@ -89,7 +89,6 @@ void ModelFactBPR::gradCheck(int u, int i, int j, Eigen::MatrixXf& Ugrad, Eigen:
   r_ui = ((uFeat - iFeat).transpose()*noisyU)*(V.transpose()*iFeat);
   r_uj = (uFeat.transpose()*noisyU)*(V.transpose()*jFeat);
   r_uij = r_ui - r_uj;
-  //TODO: check if natural log
   lossRight = -log(sigmoid(r_uij));
 
   //perturb U with -E and compute loss

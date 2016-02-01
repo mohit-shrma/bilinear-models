@@ -207,7 +207,6 @@ void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row,
     for (int ii = mat->rowptr[row]; ii < mat->rowptr[row+1]; ii++) {
       colInd = mat->rowind[ii];
       val = mat->rowval[ii];
-      //TODO: verify below
         pdt[k] += W(colInd, k)*val;
     }
   }

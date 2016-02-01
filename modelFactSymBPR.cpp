@@ -37,7 +37,6 @@ void ModelFactSymBPR::computeUSpGrad(int u, int i, int j, const Data& data,
 }
 
 
-//TODO: verify if model correctly copied in bestModel
 void ModelFactSymBPR::train(const Data& data, Model& bestModel) {
 
   std::cout << "\nModelFactSymBPR::train";
