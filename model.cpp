@@ -85,6 +85,7 @@ bool Model::isTerminateModelObj(Model& bestModel, const Data& data, int iter,
   }
 
   if (0 == iter) {
+    bestModel = *this;
     bestObj = currObj;
     bestIter = iter;
   }

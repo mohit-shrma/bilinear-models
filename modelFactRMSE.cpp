@@ -146,7 +146,7 @@ void ModelFactRMSE::train(const Data &data, Model& bestModel) {
   Eigen::VectorXf f_iT_U(rank);
   Eigen::VectorXf f_iT_V(rank);
   Eigen::VectorXf f_u_f_i_diff(nFeatures);
-  float bestObj, prevObj, valRecall;
+  float bestObj, prevObj;
   int trainNNZ = getNNZ(data.trainMat); 
 
   int u, ii, item, nUserItems;

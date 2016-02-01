@@ -6,8 +6,6 @@
 class ModelLinSym: public Model {
   
   public:
-    Eigen::MatrixXf U;
-    Eigen::VectorXf w;
     ModelLinSym(const Params &params, int nFeatures);
     virtual float estPosRating(int u, int item, const Data& data,
       Eigen::VectorXf& pdt);
