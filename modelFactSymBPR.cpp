@@ -107,7 +107,7 @@ void ModelFactSymBPR::train(const Data& data, Model& bestModel) {
     subDuration = duration.count();
 
     //perform model evaluation on validation set
-    if (iter %OBJ_ITER == 0) {
+    if (iter %OBJ_ITER == 0 || iter == maxIter-1) {
       start = std::chrono::system_clock::now();
       if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
           prevRecall)) {

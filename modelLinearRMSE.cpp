@@ -79,7 +79,7 @@ void ModelLinearRMSE::train(const Data& data, Model& bestModel) {
     }
     
     //perform model evaluation on validation set
-    if (iter %OBJ_ITER == 0) {
+    if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
       //valRecall = computeRecallPar(data.valMat, data, 10, data.valItems);
       if (isTerminateModelObj(bestModel, data, iter, bestIter, bestObj, 
                               prevObj)) {

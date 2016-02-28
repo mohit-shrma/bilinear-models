@@ -175,7 +175,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
     //performNucNormProjSVDLibWReg(W, nucReg);
     
     //perform model evaluation on validation set
-    if (iter %OBJ_ITER == 0) {
+    if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
       if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
           prevRecall)) {
         break;
