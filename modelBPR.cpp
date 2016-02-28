@@ -106,8 +106,8 @@ void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
   
 }
 
-
-void ModelBPR::train(const Data &data, Model& bestModel) {
+/*
+void ModelBPR::train2(const Data &data, Model& bestModel) {
 
   std::cout << "\nModelBPR::train" << std::endl;
 
@@ -166,5 +166,87 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   }
   
 }
+*/
 
+void ModelBPR::train(const Data &data, Model& bestModel) {
+
+  std::cout << "\nModelBPR::train" << std::endl;
+
+  int bestIter;
+  Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
+  Eigen::MatrixXf T(nFeatures, nFeatures);
+  Eigen::VectorXf iFeat(nFeatures);
+  Eigen::VectorXf jFeat(nFeatures);
+  Eigen::VectorXf uFeat(nFeatures);
+  Eigen::VectorXf pdt(nFeatures);
+  float bestRecall, prevRecall;
+  int trainNNZ = getNNZ(data.trainMat); 
+  std::array<int, 3> triplet;
+ 
+  std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
+  //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  double regMult = (1.0 - 2.0*learnRate*l2Reg);
+  for (int iter = 0; iter < maxIter; iter++) {
+    start = std::chrono::system_clock::now();
+    T.fill(0);
+    int subIter;
+    for (subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
+        
+      //sample triplet
+      triplet = data.sampleTriplet();
+
+      int u = triplet[0];
+      int pI = triplet[1];
+      int nI = triplet[2];
+
+      float r_ui = estPosRating(u, pI, data, pdt);
+      float r_uj = estNegRating(u, nI, data, pdt);
+      double r_uij = r_ui - r_uj;
+      double expCoeff = 1.0 /(1.0 + exp(r_uij));
+      
+      //learnRate * expCoeff * f_u * f_i^T
+      lazyUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
+          learnRate*expCoeff, regMult, subIter);
+      
+      //- learnRate * expCoeff * f_u * f_j^T
+      lazyUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
+          -learnRate*expCoeff, regMult, subIter);
+
+      //-learnRate * expCoeff * f_i * f_i^T
+      lazyUpdMatWSpOuterPdt(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
+          -learnRate*expCoeff, regMult, subIter);
+    } 
+    
+    //perform reg updates on all the pairs
+    for (int ind1 = 0; ind1 < nFeatures; ind1++) {
+      for (int ind2 = 0; ind2 < nFeatures; ind2++) {
+        //update with reg updates
+         W(ind1, ind2) = W(ind1, ind2)*pow(regMult, 
+                                           subIter-T(ind1, ind2));
+      }
+    }
+
+
+    end = std::chrono::system_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    //TODO:nuclear norm projection on each triplet or after all sub-iters
+    //performNucNormProjSVDLib(W, rank);
+    //performNucNormProjSVDLibWReg(W, nucReg);
+    
+    //perform model evaluation on validation set
+    if (iter %OBJ_ITER == 0) {
+      if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
+          prevRecall)) {
+        break;
+      }
+      std::cout << "\niter: " << iter << " val recall: " << prevRecall
+        << " best recall: " << bestRecall << " duration: " 
+        << duration.count() << std::endl;
+    }
+  
+  }
+  
+}
 

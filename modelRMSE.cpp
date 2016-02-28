@@ -58,40 +58,22 @@ void ModelRMSE::computeRMSEGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
 
 
 void ModelRMSE::computeRMSESparseGrad(int u, int i, float r_ui, 
-    Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data,
-    std::chrono::time_point<std::chrono::system_clock>& startRat,
-    std::chrono::time_point<std::chrono::system_clock>& endRat,
-    std::chrono::time_point<std::chrono::system_clock>& startOut,
-    std::chrono::time_point<std::chrono::system_clock>& endOut,
-    std::chrono::time_point<std::chrono::system_clock>& startUpdGrad,
-    std::chrono::time_point<std::chrono::system_clock>& endUpdGrad) {
+    Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data) {
   
   float r_ui_est;
   float l2RegTwice = 2.0*l2Reg;
 
-  startRat = std::chrono::system_clock::now();
   r_ui_est  = estPosRating(u, i, data, pdt);
-  endRat = std::chrono::system_clock::now();
   
-  startUpdGrad = std::chrono::system_clock::now();
   Wgrad = l2RegTwice*W;
-  endUpdGrad = std::chrono::system_clock::now();
 
   float outWt = 2.0*(r_ui_est - r_ui); 
 
-  startOut = std::chrono::system_clock::now();
   //f_u*f_i^T
   updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, i, outWt);
   
   //-f_i*f_i^T
   updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, i, data.itemFeatMat, i, -1*outWt);
-  endOut = std::chrono::system_clock::now();
-
-  //2*(r_ui_est-r_ui)
-  //Wgrad *= 2.0*(r_ui_est - r_ui);
-    
-  //add Wgrad to gradient of l2 reg
-  //Wgrad += 2.0*l2Reg*W;
 }
 
 
@@ -273,24 +255,12 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
 
   std::chrono::time_point<std::chrono::system_clock> startSub, endSub;
-  std::chrono::time_point<std::chrono::system_clock> startGrad, endGrad;
-  std::chrono::time_point<std::chrono::system_clock> startRat, endRat;
-  std::chrono::time_point<std::chrono::system_clock> startOut, endOut;
-  std::chrono::time_point<std::chrono::system_clock> startUpdGrad, endUpdGrad;
-  std::chrono::duration<double> durationGrad, durationRat;
-  double gradDuration = 0;
-  double ratDuration = 0;
-  double outDuration, updDuration;
+  double regMult =  (1.0 - 2.0*learnRate*l2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
     startSub = std::chrono::system_clock::now();
-    gradDuration = 0;
-    ratDuration = 0;
-    outDuration = 0;
-    updDuration = 0;
     T.fill(0);
     int subIter;
     for (subIter = 0; subIter < trainNNZ; subIter++) {
-    //for (int subIter = 0; subIter < 10; subIter++) {
       
       //sample user
       while (1) {
@@ -308,64 +278,22 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
       r_ui = data.trainMat->rowval[ii];
       r_ui_est = estPosRating(u, item, data, pdt);
         
-      float err = 2.0*(r_ui_est - r_ui);
+      double err = 2.0*(r_ui_est - r_ui);
 
       //- learnRate * err * f_u * f_i^T
-      for (int ii2 = data.itemFeatMat->rowptr[item]; 
-          ii2 < data.itemFeatMat->rowptr[item+1]; ii2++) {
-        int ind2 = data.itemFeatMat->rowind[ii2];
-        float val2 = data.itemFeatMat->rowval[ii2];
-        for (int ii1 = data.uFAccumMat->rowptr[u];
-            ii1 < data.uFAccumMat->rowptr[u+1];
-            ii1++) {
-          int ind1 = data.uFAccumMat->rowind[ii1];
-          float val1 = data.uFAccumMat->rowval[ii1];
-          //update W(ind1, ind2)
-
-          //update with reg updates
-          W(ind1, ind2) = W(ind1, ind2)*pow((1.0 - 2*learnRate*l2Reg), 
-                                            (subIter+1)-T(ind1, ind2));
-
-          //record that reg update was done in this iter
-          T(ind1, ind2) = subIter + 1;
-
-          //do the actual update
-          W(ind1, ind2) = W(ind1, ind2) - learnRate*err*val1*val2;
-        }
-      }
-
+      lazyUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, item,
+        -learnRate*err, regMult, subIter);
 
       //learnRate * err * f_i * f_i^T
-      for (int ii2 = data.itemFeatMat->rowptr[item];
-          ii2 < data.itemFeatMat->rowptr[item+1]; ii2++) {
-        int ind2 = data.itemFeatMat->rowind[ii2];
-        float val2 = data.itemFeatMat->rowval[ii2];
-        for (int ii1 = data.itemFeatMat->rowptr[item];
-            ii1 < data.itemFeatMat->rowptr[item+1];
-            ii1++) {
-          int ind1 = data.itemFeatMat->rowind[ii1];
-          float val1 = data.itemFeatMat->rowval[ii1];
-          //update W(ind1, ind2)
-
-          //update with reg updates
-          W(ind1, ind2) = W(ind1, ind2)*pow((1.0 - 2*learnRate*l2Reg), 
-                                            (subIter+1)-T(ind1, ind2));
-          
-          //record that reg update was done in this iter
-          T(ind1, ind2) = subIter + 1;
-
-          //do the actual update
-          W(ind1, ind2) = W(ind1, ind2) + learnRate*err*val1*val2;
-        }
-      }
-
+      lazyUpdMatWSpOuterPdt(W, T, data.itemFeatMat, item, data.itemFeatMat, item,
+          learnRate*err, regMult, subIter);
     }
 
     //perform reg updates on all the pairs
     for (int ind1 = 0; ind1 < nFeatures; ind1++) {
       for (int ind2 = 0; ind2 < nFeatures; ind2++) {
         //update with reg updates
-         W(ind1, ind2) = W(ind1, ind2)*pow((1.0 - 2*learnRate*l2Reg), 
+         W(ind1, ind2) = W(ind1, ind2)*pow(regMult, 
                                            subIter-T(ind1, ind2));
       }
     }
@@ -373,12 +301,6 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
     endSub = std::chrono::system_clock::now(); 
     std::chrono::duration<double> durationSub =  (endSub - startSub) ;
     std::cout << "\nsubiter duration: " << durationSub.count() << std::endl;
-    /*
-    std::cout << "\ngradient duration: " << gradDuration;
-    std::cout << "\nrating est duration: " << ratDuration; 
-    std::cout << "\nout duration: " << outDuration;
-    std::cout << "\nupd duration: " << updDuration << std::endl;
-    */
 
     //nuclear norm projection after all sub-iters
     std::chrono::time_point<std::chrono::system_clock> startSVD, endSVD;

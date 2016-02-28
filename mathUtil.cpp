@@ -91,7 +91,7 @@ void performNucNormProjSVDLibWReg(Eigen::MatrixXf& W, float gamma) {
   int rank, qrank, i;
 
   int minrowcol = W.rows() < W.cols() ? W.rows() : W.cols();
-  rank = minrowcol < 100? minrowcol:100;
+  rank = minrowcol < 50? minrowcol:50;
 
   //create empty dense matrix 
   DMat dW = svdNewDMat(nrows, ncols);
@@ -109,7 +109,7 @@ void performNucNormProjSVDLibWReg(Eigen::MatrixXf& W, float gamma) {
   SVDRec svd = svdLAS2A(sW, rank);
 
   std::cout << "\nDimensionality: " << svd->d;
- 
+  std::cout << "\nNuke reg: " << gamma; 
   //find rank at which singular values dont exceed gamma
   for (i = 0; i < rank; i++) {
     if (svd->S[i] < gamma) {
@@ -123,7 +123,8 @@ void performNucNormProjSVDLibWReg(Eigen::MatrixXf& W, float gamma) {
     exit(0);
   }
   
-  std::cout << "\nTrimmed rank = " << qrank;
+  std::cout << "\nTrimmed rank = " << qrank << " S[" << qrank-1 <<"]: " 
+    << svd->S[qrank-1] << " S[0]: " << svd->S[0];
 
   //multiply singular values with Vt
   for (i = 0; i < qrank; i++) {
@@ -228,6 +229,37 @@ void updateMatWSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1,
     for (ii1 = mat1->rowptr[row1]; ii1 < mat1->rowptr[row1+1]; ii1++) {
       ind1 = mat1->rowind[ii1];
       val1 = mat1->rowval[ii1];
+      W(ind1, ind2) += scalar*val1*val2;
+    }
+  }
+
+}
+
+
+//update matrix with sign*vec*vec^T
+void lazyUpdMatWSpOuterPdt(Eigen::MatrixXf& W, Eigen::MatrixXf& T, 
+    gk_csr_t *mat1, int row1, gk_csr_t *mat2, int row2, double scalar, 
+    double regMult, int subIter) {
+  
+  int ind1, ind2;
+  int ii1, ii2;
+  float val1, val2;
+
+  for (ii2 = mat2->rowptr[row2]; ii2 < mat2->rowptr[row2+1]; ii2++) {
+    ind2 = mat2->rowind[ii2];
+    val2 = mat2->rowval[ii2];
+    for (ii1 = mat1->rowptr[row1]; ii1 < mat1->rowptr[row1+1]; ii1++) {
+      ind1 = mat1->rowind[ii1];
+      val1 = mat1->rowval[ii1];
+      //update W(ind1, ind2)
+      
+      //update with reg updates
+      W(ind1, ind2) = W(ind1, ind2)*pow(regMult, (subIter+1) - T(ind1, ind2));
+
+      //record that reg update was done in this iter
+      T(ind1, ind2) = subIter + 1;
+      
+      //actual update
       W(ind1, ind2) += scalar*val1*val2;
     }
   }

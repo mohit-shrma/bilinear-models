@@ -30,4 +30,7 @@ float sparseDotProd2(gk_csr_t* mat1, int i, gk_csr_t* mat2, int j);
 float sparseDotProd(gk_csr_t* mat1, int i, gk_csr_t* mat2, int j);
 float spVecWtspVecPdt(Eigen::VectorXf& w, gk_csr_t* mat1, int row1, 
     gk_csr_t* mat2, int row2);
+void lazyUpdMatWSpOuterPdt(Eigen::MatrixXf& W, Eigen::MatrixXf& T, 
+    gk_csr_t *mat1, int row1, gk_csr_t *mat2, int row2, double scalar, 
+    double regMult, int subIter);
 #endif
