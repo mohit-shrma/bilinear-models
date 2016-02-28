@@ -106,67 +106,6 @@ void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
   
 }
 
-/*
-void ModelBPR::train2(const Data &data, Model& bestModel) {
-
-  std::cout << "\nModelBPR::train" << std::endl;
-
-  int bestIter;
-  Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
-  Eigen::VectorXf iFeat(nFeatures);
-  Eigen::VectorXf jFeat(nFeatures);
-  Eigen::VectorXf uFeat(nFeatures);
-  Eigen::VectorXf pdt(nFeatures);
-  float bestRecall, prevRecall;
-  int trainNNZ = getNNZ(data.trainMat); 
-  std::array<int, 3> triplet;
- 
-  std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
-  std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
-
-  std::chrono::time_point<std::chrono::system_clock> start, end;
-  for (int iter = 0; iter < maxIter; iter++) {
-    start = std::chrono::system_clock::now();
-    for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
-        
-      //sample triplet
-      triplet = data.sampleTriplet();
-      
-      //extractFeat(data.uFAccumMat, triplet[0], uFeat);
-      //extractFeat(data.itemFeatMat, triplet[1], iFeat);
-      //extractFeat(data.itemFeatMat, triplet[2], jFeat);
-      
-      //compute gradient
-      //gradCheck(uFeat, iFeat, jFeat, Wgrad); 
-      //computeBPRGrad(uFeat, iFeat, jFeat, Wgrad);
-      computeBPRSparseGrad(triplet[0], triplet[1], triplet[2], Wgrad, pdt, 
-          data);
-
-      //update W
-      W -= learnRate*Wgrad;
-    } 
-    
-    end = std::chrono::system_clock::now();
-    std::chrono::duration<double> duration = end - start;
-    //TODO:nuclear norm projection on each triplet or after all sub-iters
-    performNucNormProjSVDLib(W, rank);
-    //performNucNormProjSVDLibWReg(W, nucReg);
-    
-    //perform model evaluation on validation set
-    if (iter %OBJ_ITER == 0) {
-      if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
-          prevRecall)) {
-        break;
-      }
-      std::cout << "\niter: " << iter << " val recall: " << prevRecall
-        << " best recall: " << bestRecall << " duration: " 
-        << duration.count() << std::endl;
-    }
-  
-  }
-  
-}
-*/
 
 void ModelBPR::train(const Data &data, Model& bestModel) {
 
