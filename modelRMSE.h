@@ -14,8 +14,14 @@ class ModelRMSE: public ModelFullMat {
     virtual float objective(const Data& data);
     void computeRMSEGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
         Eigen::MatrixXf& Wgrad, float r_ui);
-    void computeRMSESparseGrad(int u, int i, float r_ui, 
-      Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data);
+  void computeRMSESparseGrad(int u, int i, float r_ui, 
+      Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data,
+      std::chrono::time_point<std::chrono::system_clock>& startRat,
+      std::chrono::time_point<std::chrono::system_clock>& endRat,
+      std::chrono::time_point<std::chrono::system_clock>& startOut,
+      std::chrono::time_point<std::chrono::system_clock>& endOut,
+      std::chrono::time_point<std::chrono::system_clock>& startUpdGrad,
+      std::chrono::time_point<std::chrono::system_clock>& endUpdGrad);
     void gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
         Eigen::MatrixXf& Wgrad, float r_ui);
 };
