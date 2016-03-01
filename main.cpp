@@ -17,14 +17,15 @@
 
 Params parse_cmd_line(int argc, char *argv[]) {
   
-  if (argc < 15) {
+  if (argc < 16) {
     std::cout  << "\nNot enough arguments";
     exit(0);
   } 
 
   Params params(argv[1], argv[2], argv[3], argv[4], argv[5],
-      atof(argv[6]), atof(argv[7]), atof(argv[8]), atof(argv[9]), atoi(argv[10]),
-      atoi(argv[11]), atof(argv[12]), atoi(argv[13]), atoi(argv[14]));
+      atof(argv[6]), atof(argv[7]), atof(argv[8]), atof(argv[9]), atof(argv[10]),
+      atoi(argv[11]), atoi(argv[12]), atof(argv[13]), atoi(argv[14]), 
+      atoi(argv[15]));
   
   return params;
 }
@@ -45,7 +46,6 @@ int main(int argc, char *argv[]) {
   
   //create baseline model
   ModelCosine cosModel(params, data.nFeatures);
-
   /*
   start = std::chrono::system_clock::now();
   float baseRecallPar = cosModel.computeRecallPar(data.testMat, data, 10, 
@@ -59,9 +59,10 @@ int main(int argc, char *argv[]) {
       data.valItems);
   std::cout << "\nVal baseline recall par: " << baseValRecallPar << std::endl;
   */
-
-  ModelLinFactMat bestModel(params, data.nFeatures);
-  ModelLinFactMatBPR m(params, data.nFeatures);
+  ModelFullMat bestModel(params, data.nFeatures);
+  ModelRMSE m(params, data.nFeatures);
+  //ModelBPR m(params, data.nFeatures);
+  
   m.train(data, bestModel);
   
   float testRecall = bestModel.computeRecallPar(data.testMat, data, 10, 
