@@ -3,12 +3,14 @@
 Model::Model(const Params &params, int p_nFeatures) {
   nFeatures = p_nFeatures;
   l2Reg     = params.l2Reg;
+  l1Reg     = params.l1Reg;
   wReg      = params.wReg;
   nucReg    = params.nucReg;
   learnRate = params.learnRate;
   rank      = params.rank;
   maxIter   = params.maxIter;
-  pcSamples = params.pcSamples; 
+  pcSamples = params.pcSamples;
+  seed      = params.seed;
 }
 
 

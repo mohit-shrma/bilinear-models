@@ -8,7 +8,8 @@ float ModelRMSE::objective(const Data& data) {
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf pdt(nFeatures);
-  float rmse = 0, WReg = 0, nucNormReg = 0, nucNorm = 0, obj = 0;
+  float rmse = 0, WL2Reg = 0, nucNormReg = 0, nucNorm = 0, obj = 0;
+  float WL1Reg = 0;
   nnz = 0;
   for (u = 0; u < data.trainMat->nrows; u++) {
     extractFeat(data.uFAccumMat, u, uFeat);
@@ -25,8 +26,10 @@ float ModelRMSE::objective(const Data& data) {
   }
     
   w_norm = W.norm();
-  WReg = l2Reg*w_norm*w_norm;
+  WL2Reg = l2Reg*w_norm*w_norm;
  
+  WL1Reg = l1Reg*(W.lpNorm<1>());
+
   /*
   //compute thin svd
   Eigen::JacobiSVD<Eigen::MatrixXf> svd(W, 
@@ -38,7 +41,7 @@ float ModelRMSE::objective(const Data& data) {
   nucNormReg = nucNorm*nucReg;
   */
 
-  obj += rmse/nnz + WReg + nucNormReg;
+  obj += rmse/nnz + WL2Reg + WL1Reg  + nucNormReg;
   
   return obj;
 }
@@ -122,7 +125,7 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   
   std::cout << "\nModelRMSE::train";
 
-  int bestIter;
+  int bestIter, subIter;
   Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
   Eigen::MatrixXf T(nFeatures, nFeatures);
   Eigen::VectorXf iFeat(nFeatures);
@@ -136,39 +139,42 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   float r_ui_est; 
   std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
 
+  //random engine
+  std::mt19937 mt(seed);
+  
+  auto uiRatings = getUIRatings(data.trainMat);
+
   std::chrono::time_point<std::chrono::system_clock> startSub, endSub;
   double regMult =  (1.0 - 2.0*learnRate*l2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
+    //shuffle the user item ratings
+    std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
     startSub = std::chrono::system_clock::now();
     T.fill(0);
-    int subIter;
-    for (subIter = 0; subIter < trainNNZ; subIter++) {
+    subIter = 0;
+    for (auto&& uiRating: uiRatings) {
+      //get user, item and rating
+      u       = std::get<0>(uiRating);
+      item    = std::get<1>(uiRating);
+      r_ui    = std::get<2>(uiRating);
       
-      //sample user
-      while (1) {
-        u = std::rand() % data.nUsers;
-        if (data.posTrainUsers.find(u) != data.posTrainUsers.end()) {
-          //found u
-          break;
-        }
+      if (data.posTrainUsers.find(u) != data.posTrainUsers.end()) {
+        //found u
+        continue;
       }
       
-      //sample a rated item
-      nUserItems = data.trainMat->rowptr[u+1] - data.trainMat->rowptr[u];
-      ii = std::rand()%nUserItems + data.trainMat->rowptr[u];
-      item = data.trainMat->rowind[ii];
-      r_ui = data.trainMat->rowval[ii];
       r_ui_est = estPosRating(u, item, data, pdt);
         
       double err = 2.0*(r_ui_est - r_ui);
 
       //- learnRate * err * f_u * f_i^T
-      lazyUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, item,
-        -learnRate*err, regMult, subIter);
+      lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, item,
+        -learnRate*err, regMult, subIter, l1Reg);
 
       //learnRate * err * f_i * f_i^T
-      lazyUpdMatWSpOuterPdt(W, T, data.itemFeatMat, item, data.itemFeatMat, item,
-          learnRate*err, regMult, subIter);
+      lazySparseUpdMatWSpOuterPdt(W, T, data.itemFeatMat, item, data.itemFeatMat, item,
+          learnRate*err, regMult, subIter, l1Reg);
+      subIter++;
     }
 
     //perform reg updates on all the pairs
@@ -177,6 +183,8 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
         //update with reg updates
          W(ind1, ind2) = W(ind1, ind2)*pow(regMult, 
                                            subIter-T(ind1, ind2));
+        //L1 or proximal update
+        W(ind1, ind2) = proxL1(W(ind1, ind2), l1Reg);
       }
     }
     

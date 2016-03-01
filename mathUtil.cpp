@@ -1,5 +1,19 @@
 #include "mathUtil.h"
 
+float proxL1(float x, float l1Reg) {
+  if (fabs(x) > l1Reg) {
+    if (x > 0) {
+      x = fabs(x) - l1Reg;
+    } else {
+      x = -1.0 * (fabs(x) -  l1Reg);
+    }
+  } else  {
+    x = 0;
+  }
+  return x;
+}
+
+
 float sigmoid(float x) {
   return 1.0/(1.0 + exp(-x));
 }
@@ -261,6 +275,39 @@ void lazyUpdMatWSpOuterPdt(Eigen::MatrixXf& W, Eigen::MatrixXf& T,
       
       //actual update
       W(ind1, ind2) += scalar*val1*val2;
+    }
+  }
+
+}
+
+
+void lazySparseUpdMatWSpOuterPdt(Eigen::MatrixXf& W, Eigen::MatrixXf& T, 
+    gk_csr_t *mat1, int row1, gk_csr_t *mat2, int row2, double scalar, 
+    double regMult, int subIter, float l1Reg) {
+  
+  int ind1, ind2;
+  int ii1, ii2;
+  float val1, val2;
+
+  for (ii2 = mat2->rowptr[row2]; ii2 < mat2->rowptr[row2+1]; ii2++) {
+    ind2 = mat2->rowind[ii2];
+    val2 = mat2->rowval[ii2];
+    for (ii1 = mat1->rowptr[row1]; ii1 < mat1->rowptr[row1+1]; ii1++) {
+      ind1 = mat1->rowind[ii1];
+      val1 = mat1->rowval[ii1];
+      //update W(ind1, ind2)
+      
+      //update with reg updates
+      W(ind1, ind2) = W(ind1, ind2)*pow(regMult, (subIter+1) - T(ind1, ind2));
+
+      //record that reg update was done in this iter
+      T(ind1, ind2) = subIter + 1;
+      
+      //actual update
+      W(ind1, ind2) += scalar*val1*val2;
+      
+      //L1 or proximal update
+      W(ind1, ind2) = proxL1(W(ind1, ind2), l1Reg);
     }
   }
 

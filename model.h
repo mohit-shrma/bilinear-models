@@ -6,6 +6,8 @@
 #include <vector>
 #include <cmath>
 #include <thread>
+#include <random>
+#include <tuple>
 #include "mathUtil.h"
 #include "const.h"
 #include "datastruct.h"
@@ -22,13 +24,15 @@ class Model {
     int nFeatures;
     
     float l2Reg;
+    float l1Reg;
     float wReg;
     float nucReg;
     float learnRate;
     float pcSamples;
     int rank;
     int maxIter;
-    
+    int seed;
+
     Model(const Params &params, int p_nFeatures);
 
     virtual float objective(const Data& data) {

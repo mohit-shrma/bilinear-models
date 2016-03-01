@@ -111,51 +111,68 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
 
   std::cout << "\nModelBPR::train" << std::endl;
 
-  int bestIter;
+  int bestIter, u, pI, nI;
   Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
   Eigen::MatrixXf T(nFeatures, nFeatures);
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf jFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf pdt(nFeatures);
-  float bestRecall, prevRecall;
+  float bestRecall, prevRecall, r_ui;
   int trainNNZ = getNNZ(data.trainMat); 
-  std::array<int, 3> triplet;
  
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
   //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
 
+  //random engine
+  std::mt19937 mt(seed);
+  
+  auto uiRatings = getUIRatings(data.trainMat);
+  
   std::chrono::time_point<std::chrono::system_clock> start, end;
   double regMult = (1.0 - 2.0*learnRate*l2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
+    //shuffle the user item ratings
+    std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
     start = std::chrono::system_clock::now();
     T.fill(0);
-    int subIter;
-    for (subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
-        
-      //sample triplet
-      triplet = data.sampleTriplet();
+    int subIter = 0;
+    for (auto&& uiRating: uiRatings) {
+      //get user, item and rating
+      u    = std::get<0>(uiRating);
+      pI   = std::get<1>(uiRating);
+      r_ui = std::get<2>(uiRating);
+      
+      //skip if negative or 0 rating
+      if (r_ui <= 0) {
+        continue;
+      }
 
-      int u = triplet[0];
-      int pI = triplet[1];
-      int nI = triplet[2];
+      if (data.posTrainUsers.find(u) != data.posTrainUsers.end()) {
+        //found u, not valid train user
+        continue;
+      }
 
-      float r_ui = estPosRating(u, pI, data, pdt);
+      //sample a negative item for user u
+      nI = data.sampleNegItem(u);
+
       float r_uj = estNegRating(u, nI, data, pdt);
       double r_uij = r_ui - r_uj;
       double expCoeff = 1.0 /(1.0 + exp(r_uij));
       
       //learnRate * expCoeff * f_u * f_i^T
-      lazyUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
-          learnRate*expCoeff, regMult, subIter);
+      lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
+          learnRate*expCoeff, regMult, subIter, l1Reg);
       
       //- learnRate * expCoeff * f_u * f_j^T
-      lazyUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
-          -learnRate*expCoeff, regMult, subIter);
+      lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
+          -learnRate*expCoeff, regMult, subIter, l1Reg);
 
       //-learnRate * expCoeff * f_i * f_i^T
-      lazyUpdMatWSpOuterPdt(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
-          -learnRate*expCoeff, regMult, subIter);
+      lazySparseUpdMatWSpOuterPdt(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
+          -learnRate*expCoeff, regMult, subIter, l1Reg);
+      
+      subIter++;
     } 
     
     //perform reg updates on all the pairs
@@ -164,6 +181,8 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
         //update with reg updates
          W(ind1, ind2) = W(ind1, ind2)*pow(regMult, 
                                            subIter-T(ind1, ind2));
+        //L1 or proximal update
+        W(ind1, ind2) = proxL1(W(ind1, ind2), l1Reg);
       }
     }
 

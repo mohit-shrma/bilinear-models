@@ -18,7 +18,8 @@ class Params {
     char *valMatFile;
     char *itemFeatureFile;
     char *featAccumFile;
-
+    
+    float l1Reg;
     float l2Reg;
     float wReg;
     float nucReg;
@@ -32,12 +33,12 @@ class Params {
     bool isFeatNorm;
 
     Params(char *p_trainMatFile, char *p_testMatFile, char *p_valMatFile,
-            char *p_itemFeatureFile, char *p_featAccumFile, 
+            char *p_itemFeatureFile, char *p_featAccumFile, float p_l1Reg, 
             float p_l2Reg, float p_wReg, float p_nucReg, float p_learnRate, int p_rank,
             int p_seed, float p_pcSamples, int p_maxIter, bool p_isFeatNorm)
             : trainMatFile(p_trainMatFile), testMatFile(p_testMatFile), 
             valMatFile(p_valMatFile), itemFeatureFile(p_itemFeatureFile),
-            featAccumFile(p_featAccumFile), 
+            featAccumFile(p_featAccumFile), l1Reg(p_l1Reg), 
             l2Reg(p_l2Reg), wReg(p_wReg), nucReg(p_nucReg), learnRate(p_learnRate),
             rank(p_rank), seed(p_seed), pcSamples(p_pcSamples),
             maxIter(p_maxIter), isFeatNorm(p_isFeatNorm) {}
@@ -94,6 +95,7 @@ class Data {
     
       
     }
+
 
     Data(const Params& params) {
       trainMat = NULL;
@@ -261,7 +263,62 @@ class Data {
 
     return triplet;
   }
+  
+
+  int sampleNegItem(int u) const {
     
+    int j = -1, jj;
+    int nUserItems, start, end;
+    int nTrainItems = trainItems.size();
+    int32_t *ui_rowind = trainMat->rowind;
+    ssize_t *ui_rowptr = trainMat->rowptr;
+    float   *ui_rowval = trainMat->rowval;
+
+    //sample neg item
+    while(1) {
+      jj = std::rand()%nUserItems;
+      if (ui_rowval[jj + ui_rowptr[u]] == 0.0) {
+        //explicit 0
+        j = ui_rowind[jj + ui_rowptr[u]];
+        break;
+      } else {
+        //search for implicit 0
+        
+        if (0 == jj) {
+          start = 0;
+          end = ui_rowind[ui_rowptr[u]]; //first rated item by u
+        } else if (nUserItems-1 == jj) {
+          start = ui_rowind[ui_rowptr[u] + jj] + 1; //item next to last rated item
+          end = nTrainItems;
+        } else {
+          start = ui_rowind[ui_rowptr[u] + jj] + 1; //item next to jjth item
+          end = ui_rowind[ui_rowptr[u] + jj + 1]; //item rated after jjth item
+        }
+
+        //check for empty interval
+        if (end - start > 0) {
+          j = std::rand()%(end-start) + start;
+        } else {
+          continue;
+        }
+
+        //make sure sampled -ve item not present in testSet and valSet
+        if (testItems.find(j) != testItems.end() ||
+            valItems.find(j) != valItems.end()) {
+          //found in either set
+          continue;
+        }
+
+        if (trainItems.find(j) != trainItems.end()) {
+          break;
+        }
+      }
+    } //end while
+
+
+    return j;
+  }
+
 
   ~Data() {
       if (trainMat) {
