@@ -138,7 +138,7 @@ void performNucNormProjSVDLibWReg(Eigen::MatrixXf& W, float gamma) {
   }
   
   std::cout << "\nTrimmed rank = " << qrank << " S[" << qrank-1 <<"]: " 
-    << svd->S[qrank-1] << " S[0]: " << svd->S[0];
+    << svd->S[qrank-1] << " S[0]: " << svd->S[0] << std::endl;
 
   //multiply singular values with Vt
   for (i = 0; i < qrank; i++) {
