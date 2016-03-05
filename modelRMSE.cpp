@@ -180,10 +180,10 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
     
     endSub = std::chrono::system_clock::now(); 
     std::chrono::duration<double> durationSub =  (endSub - startSub) ;
-    std::cout << "\nsubiter duration: " << durationSub.count() << std::endl;
 
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
+      std::cout << "\nsubiter duration: " << durationSub.count() << std::endl;
       //valRecall = computeRecallPar(data.valMat, data, 10, data.valItems);
       if (isTerminateModelObj(bestModel, data, iter, bestIter, bestObj, 
           prevObj)) {

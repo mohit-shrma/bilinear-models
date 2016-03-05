@@ -13,7 +13,8 @@
 #include "modelLinearRMSE.h"
 #include "modelLinearBPR.h"
 #include "modelLinFactMatBPR.h"
-#include "modelFullHinge.h"
+#include "modelRMSEFullGrad.h"
+#include "modelBPRFullGrad.h"
 
 Params parse_cmd_line(int argc, char *argv[]) {
   
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]) {
   Data data(params);
   
   std::chrono::time_point<std::chrono::system_clock> start, end;
-  
+ 
   //create baseline model
   ModelCosine cosModel(params, data.nFeatures);
   /*
@@ -59,9 +60,13 @@ int main(int argc, char *argv[]) {
       data.valItems);
   std::cout << "\nVal baseline recall par: " << baseValRecallPar << std::endl;
   */
+
+  
   ModelFullMat bestModel(params, data.nFeatures);
-  ModelRMSE m(params, data.nFeatures);
-  //ModelBPR m(params, data.nFeatures);
+  //ModelRMSEFGrad m(params, data.nFeatures);
+  //ModelBPRFGrad m(params, data.nFeatures);
+  ModelBPR m(params, data.nFeatures);
+  //ModelRMSE m(params, data.nFeatures);
   
   m.train(data, bestModel);
   
@@ -73,10 +78,10 @@ int main(int argc, char *argv[]) {
       data.valItems);
   std::cout << "\nVal recall: " << valRecall;
 
-  std::cout << "\nRE: " << params.l2Reg << " " << params.wReg << " " 
-    << params.nucReg << " " << params.learnRate << " " << params.rank << " "
-    << valRecall << " " << testRecall << std::endl;
-
+  std::cout << "\nRE: " << params.l2Reg << " " << params.l1Reg << " "
+    << params.wReg << " " << params.nucReg << " " << params.learnRate << " " 
+    << params.rank << " " << valRecall << " " << testRecall << std::endl;
+  
   return 0;
 }
 
