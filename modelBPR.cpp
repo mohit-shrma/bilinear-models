@@ -189,9 +189,6 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
 
     end = std::chrono::system_clock::now();
     std::chrono::duration<double> duration = end - start;
-    //TODO:nuclear norm projection on each triplet or after all sub-iters
-    //performNucNormProjSVDLib(W, rank);
-    //performNucNormProjSVDLibWReg(W, nucReg);
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {

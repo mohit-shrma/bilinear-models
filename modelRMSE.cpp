@@ -8,7 +8,7 @@ float ModelRMSE::objective(const Data& data) {
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf pdt(nFeatures);
-  float rmse = 0, WL2Reg = 0, nucNormReg = 0, nucNorm = 0, obj = 0;
+  float rmse = 0, WL2Reg = 0, obj = 0;
   float WL1Reg = 0;
   nnz = 0;
   for (u = 0; u < data.trainMat->nrows; u++) {
@@ -30,18 +30,8 @@ float ModelRMSE::objective(const Data& data) {
  
   WL1Reg = l1Reg*(W.lpNorm<1>());
 
-  /*
-  //compute thin svd
-  Eigen::JacobiSVD<Eigen::MatrixXf> svd(W, 
-      Eigen::ComputeThinU|Eigen::ComputeThinV);
-  auto singVec = svd.singularValues();
-  for (ii = 0; ii < nFeatures; ii++) {
-    nucNorm += singVec[ii]; 
-  }
-  nucNormReg = nucNorm*nucReg;
-  */
 
-  obj += rmse/nnz + WL2Reg + WL1Reg  + nucNormReg;
+  obj += rmse/nnz + WL2Reg + WL1Reg;
   
   return obj;
 }
@@ -192,17 +182,6 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
     std::chrono::duration<double> durationSub =  (endSub - startSub) ;
     std::cout << "\nsubiter duration: " << durationSub.count() << std::endl;
 
-    //nuclear norm projection after all sub-iters
-    std::chrono::time_point<std::chrono::system_clock> startSVD, endSVD;
-    startSVD = std::chrono::system_clock::now();
-    
-    //performNucNormProjSVDLib(W, rank);
-    //performNucNormProjSVDLibWReg(W, nucReg);
-
-    endSVD = std::chrono::system_clock::now(); 
-    std::chrono::duration<double> durationSVD =  (endSVD - startSVD) ;
-    std::cout << "\nsvd duration: " << durationSVD.count();
-    
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
       //valRecall = computeRecallPar(data.valMat, data, 10, data.valItems);
