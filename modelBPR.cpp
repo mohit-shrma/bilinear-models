@@ -199,6 +199,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       std::cout << "\niter: " << iter << " val recall: " << prevRecall
         << " best recall: " << bestRecall << " duration: " 
         << duration.count() << std::endl;
+      std::cout << "\nW norm: " << W.norm();
     }
   
   }
