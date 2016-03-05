@@ -92,8 +92,12 @@ class Data {
       std::cout << "\nnTestItems: " << testItems.size();
       std::cout << "\nnValItems: " << valItems.size();
       std::cout << "\ntrainItems: " << trainItems.size() << std::endl;
-    
-      
+      int itemFeatNNz = getNNZ(itemFeatMat);
+      std::cout << "\navg item feat/row: " << (double)itemFeatNNz / (double) itemFeatMat->nrows;
+      std::cout << "\navg item feat/col: " << (double)itemFeatNNz / (double) itemFeatMat->ncols;
+      int uFeatNNZ = getNNZ(uFAccumMat);
+      std::cout << "\navg u feat/row: " << (double)uFeatNNZ / (double) uFAccumMat->nrows;
+      std::cout << "\navg u feat/col: " << (double)uFeatNNZ / (double) uFAccumMat->ncols;
     }
 
 
