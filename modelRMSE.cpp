@@ -29,8 +29,9 @@ float ModelRMSE::objective(const Data& data) {
   WL2Reg = l2Reg*w_norm*w_norm;
  
   WL1Reg = l1Reg*(W.lpNorm<1>());
-
-
+  
+  std::cout << "\nTrain RMSE: " << rmse/nnz << std::endl;
+  
   obj += rmse/nnz + WL2Reg + WL1Reg;
   
   return obj;
@@ -127,13 +128,19 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   int u, ii, item, nUserItems;
   float r_ui;
   float r_ui_est; 
+  
+  std::chrono::time_point<std::chrono::system_clock> startObj, endObj;
+  startObj = std::chrono::system_clock::now(); 
   std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
+  endObj = std::chrono::system_clock::now(); 
+  std::chrono::duration<double> duration =  (endObj - startObj) ;
+  std::cout << "\nObjective duration: " << duration.count() << std::endl;
 
   //random engine
   std::mt19937 mt(seed);
   
   auto uiRatings = getUIRatings(data.trainMat);
-
+  std::cout << "\nNo. train ratings: " << uiRatings.size() << std::endl;
   std::chrono::time_point<std::chrono::system_clock> startSub, endSub;
   double regMult =  (1.0 - 2.0*learnRate*l2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
@@ -192,7 +199,7 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
       std::cout << "\nIter: " << iter << " obj: " << prevObj
         << " best iter: " << bestIter << " best obj: " << bestObj;
       std::cout << "\nW norm: " << W.norm();
-      std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
+      //std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
     }
 
   }
