@@ -277,7 +277,8 @@ class Data {
     int32_t *ui_rowind = trainMat->rowind;
     ssize_t *ui_rowptr = trainMat->rowptr;
     float   *ui_rowval = trainMat->rowval;
-
+    
+    nUserItems = ui_rowptr[u+1] - ui_rowptr[u];
     //sample neg item
     while(1) {
       jj = std::rand()%nUserItems;

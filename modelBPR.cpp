@@ -121,15 +121,22 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   float bestRecall, prevRecall, r_ui;
   int trainNNZ = getNNZ(data.trainMat); 
  
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
-  //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+  
+  start = std::chrono::system_clock::now();
+  std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+  end = std::chrono::system_clock::now();
+  std::chrono::duration<double> duration = end - start;
+  std::cout << "\nValidation recall duratin: " << duration.count();
+
 
   //random engine
   std::mt19937 mt(seed);
   
   auto uiRatings = getUIRatings(data.trainMat);
   
-  std::chrono::time_point<std::chrono::system_clock> start, end;
   double regMult = (1.0 - 2.0*learnRate*l2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
     //shuffle the user item ratings
@@ -188,7 +195,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
 
 
     end = std::chrono::system_clock::now();
-    std::chrono::duration<double> duration = end - start;
+    duration = end - start;
     
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
