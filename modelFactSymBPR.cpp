@@ -52,7 +52,7 @@ void ModelFactSymBPR::train(const Data& data, Model& bestModel) {
   Eigen::VectorXf f_iT_U_f_jT_U(rank);
   Eigen::VectorXf f_uT_U_2f_iT_U(rank);
 
-  float bestRecall, prevRecall, r_uij_est;
+  float bestRecall, prevRecall;
   int trainNNZ = getNNZ(data.trainMat); 
   std::array<int, 3> triplet;
  
@@ -92,7 +92,7 @@ void ModelFactSymBPR::train(const Data& data, Model& bestModel) {
       f_uT_U_2f_iT_U = f_uT_U - 2*f_iT_U;
 
       //r_uij_est
-      r_uij_est = f_uT_U.dot(f_iT_U - f_jT_U) - f_iT_U.dot(f_iT_U);
+      //float r_uij_est = f_uT_U.dot(f_iT_U - f_jT_U) - f_iT_U.dot(f_iT_U);
 
       //compute U gradient
       computeUGrad(u, i, j, data, Ugrad, iFeat, jFeat, uFeat);

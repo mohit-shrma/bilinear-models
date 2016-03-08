@@ -36,7 +36,7 @@ void ModelLinearRMSE::train(const Data& data, Model& bestModel) {
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf wgrad(nFeatures);
-  float bestObj, prevObj, valRecall;
+  float bestObj, prevObj;
   int trainNNZ = getNNZ(data.trainMat); 
 
   int u, ii, item, nUserItems;

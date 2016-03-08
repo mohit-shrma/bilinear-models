@@ -76,11 +76,11 @@ void ModelBPRFGrad::train(const Data &data, Model& bestModel) {
     std::chrono::time_point<std::chrono::system_clock> startSVD, endSVD;
     startSVD = std::chrono::system_clock::now();
     //performNucNormProjSVDLib(W, rank);
-    //performNucNormProjSVDLibWReg(W, nucReg);
+    performNucNormProjSVDLibWReg(W, nucReg);
     
     endSVD = std::chrono::system_clock::now(); 
     std::chrono::duration<double> durationSVD =  (endSVD - startSVD) ;
-    std::cout << "\nsvd duration: " << durationSVD.count();
+    std::cout << "\nsvd duration: " << durationSVD.count() << std::endl;
  
     end = std::chrono::system_clock::now();
     std::chrono::duration<double> duration = end - start;
@@ -94,6 +94,7 @@ void ModelBPRFGrad::train(const Data &data, Model& bestModel) {
       std::cout << "\niter: " << iter << " val recall: " << prevRecall
         << " best recall: " << bestRecall << " duration: " 
         << duration.count() << std::endl;
+      std::cout << "\nW norm: " << W.norm() << " Wgrad norm: " << Wgrad.norm() << std::endl;
     }
   
   }

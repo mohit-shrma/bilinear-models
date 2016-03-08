@@ -150,7 +150,7 @@ void ModelFactBPR::train(const Data &data, Model& bestModel) {
   Eigen::VectorXf f_jT_V(rank);
   Eigen::VectorXf f_u_f_i_diff(nFeatures);
 
-  float bestRecall, prevRecall, r_uij_est;
+  float bestRecall, prevRecall;
   int trainNNZ = getNNZ(data.trainMat); 
   std::array<int, 3> triplet;
  
@@ -188,7 +188,7 @@ void ModelFactBPR::train(const Data &data, Model& bestModel) {
       spVecDiff(data.uFAccumMat, u, data.itemFeatMat, i, f_u_f_i_diff);
 
       //r_uij_est
-      r_uij_est = f_iT_V.dot(f_uT_U - f_iT_U) - f_jT_V.dot(f_uT_U);
+      //float r_uij_est = f_iT_V.dot(f_uT_U - f_iT_U) - f_jT_V.dot(f_uT_U);
 
       //compute U gradient
       computeUGrad(u, i, j, data, Ugrad, iFeat, jFeat, uFeat);

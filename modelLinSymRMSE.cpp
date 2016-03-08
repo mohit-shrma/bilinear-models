@@ -62,11 +62,11 @@ void ModelLinSymRMSE::train(const Data &data, Model& bestModel) {
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf wgrad(nFeatures);
-  float bestObj, prevObj, valRecall;
+  float bestObj, prevObj;
   int trainNNZ = getNNZ(data.trainMat); 
 
   int u, ii, item, nUserItems;
-  float r_ui, r_ui_est;
+  float r_ui;
    
   std::cout <<"\nB4 Train Objective: " << objective(data);
   std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data);

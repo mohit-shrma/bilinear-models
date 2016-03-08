@@ -57,7 +57,7 @@ void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
     Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad) {
   
   double r_ui, r_uj, r_uij, expCoeff;
-  float w_norm, lossRight, lossLeft, gradE;
+  float lossRight, lossLeft, gradE;
 
   r_ui  = (uFeat - iFeat).transpose()*W*iFeat;
   r_uj  = uFeat.transpose()*W*jFeat;
@@ -80,14 +80,14 @@ void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
   auto noisyW1 = W + perturbMat; 
   r_ui = (uFeat - iFeat).transpose()*noisyW1*iFeat;
   r_uj = uFeat.transpose()*noisyW1*jFeat;
-  w_norm = noisyW1.norm(); 
+  //w_norm = noisyW1.norm(); 
   lossRight = -log(sigmoid(r_ui - r_uj));// + l2Reg*w_norm*w_norm;
 
   //perturb W with -E and compute loss
   auto noisyW2 = W - perturbMat; 
   r_ui = (uFeat - iFeat).transpose()*noisyW2*iFeat;
   r_uj = uFeat.transpose()*noisyW2*jFeat;
-  w_norm = noisyW2.norm();
+  //w_norm = noisyW2.norm();
   lossLeft = -log(sigmoid(r_ui - r_uj));// + l2Reg*w_norm*w_norm;
 
   //compute gradient and E dotprod

@@ -68,11 +68,11 @@ void ModelFactSymRMSE::train(const Data& data, Model& bestModel) {
   Eigen::VectorXf f_uT_U(rank);
   Eigen::VectorXf f_iT_U(rank);
   Eigen::VectorXf f_u_f_i_diff(nFeatures);
-  float bestObj, prevObj, valRecall;
+  float bestObj, prevObj;
   int trainNNZ = getNNZ(data.trainMat); 
 
   int u, ii, item, nUserItems;
-  float r_ui, r_ui_est;
+  float r_ui;
    
   std::cout <<"\nB4 Train Objective: " << objective(data) << std::endl;
   std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
@@ -108,7 +108,7 @@ void ModelFactSymRMSE::train(const Data& data, Model& bestModel) {
       spVecDiff(data.uFAccumMat, u, data.itemFeatMat, item, f_u_f_i_diff);
 
       //r_ui_est
-      r_ui_est = f_iT_U.dot(f_uT_U - f_iT_U);
+      //float r_ui_est = f_iT_U.dot(f_uT_U - f_iT_U);
 
       extractFeat(data.uFAccumMat, u, uFeat);
       extractFeat(data.itemFeatMat, item, iFeat);

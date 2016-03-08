@@ -44,6 +44,7 @@ float ModelFullMat::estNegRating(int u, int item, const Data& data,
 
   //Wf_i: compute dot product of mat and sparse vector 
   matSpVecPdt(W, data.itemFeatMat, item, pdt);
+  //f_u^T W f_i 
   r_ui = vecSpVecDot(pdt, data.uFAccumMat, u);
 
   return r_ui;

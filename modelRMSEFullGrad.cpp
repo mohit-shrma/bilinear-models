@@ -8,7 +8,7 @@ float ModelRMSEFGrad::objective(const Data& data) {
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf pdt(nFeatures);
-  float rmse = 0, WL2Reg = 0, nucNormReg = 0, nucNorm = 0, obj = 0;
+  float rmse = 0, WL2Reg = 0, nucNormReg = 0, obj = 0;
   float WL1Reg = 0;
   nnz = 0;
   for (u = 0; u < data.trainMat->nrows; u++) {
@@ -57,7 +57,7 @@ void ModelRMSEFGrad::train(const Data &data, Model& bestModel) {
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf pdt(nFeatures);
-  float bestObj, prevObj, valRecall;
+  float bestObj, prevObj;
 
   int u, item;
   float r_ui;
@@ -118,7 +118,7 @@ void ModelRMSEFGrad::train(const Data &data, Model& bestModel) {
     std::chrono::duration<double> durationSub =  (endSub - startSub) ;
     std::cout << "\nsubiter duration: " << durationSub.count() << std::endl;
     
-    //TODO: objective
+    //TODO: objective add nuke reg
 
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
@@ -130,6 +130,7 @@ void ModelRMSEFGrad::train(const Data &data, Model& bestModel) {
       std::cout << "\nIter: " << iter << " obj: " << prevObj
         << " best iter: " << bestIter << " best obj: " << bestObj;
       std::cout << "\nTrain RMSE: " << computeRMSE(data.trainMat, data) << std::endl;
+      std::cout << "\nW norm: " << W.norm() << " Wgrad norm: " << Wgrad.norm() << std::endl;
     }
 
   }

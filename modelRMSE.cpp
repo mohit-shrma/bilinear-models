@@ -122,10 +122,9 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   Eigen::VectorXf iFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf pdt(nFeatures);
-  float bestObj, prevObj, valRecall;
-  int trainNNZ = getNNZ(data.trainMat); 
+  float bestObj, prevObj;
 
-  int u, ii, item, nUserItems;
+  int u, item;
   float r_ui;
   float r_ui_est; 
   
