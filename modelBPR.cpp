@@ -126,7 +126,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
   
   start = std::chrono::system_clock::now();
-  std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+  std::cout << "val recall: " << computeRecallParVec(data.valMat, data, 10, data.valItems) << std::endl;
   end = std::chrono::system_clock::now();
   std::chrono::duration<double> duration = end - start;
   std::cout << "\nValidation recall duratin: " << duration.count() << std::endl;
