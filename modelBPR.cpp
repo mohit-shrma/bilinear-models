@@ -127,10 +127,10 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
  
   
   start = std::chrono::system_clock::now();
-  //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+  std::cout << "val recall: " << computeRecallParVec(data.valMat, data, 10, data.valItems) << std::endl;
   end = std::chrono::system_clock::now();
   std::chrono::duration<double> duration = end - start;
-  //std::cout << "\nValidation recall duration: " << duration.count() << std::endl;
+  std::cout << "\nValidation recall duration: " << duration.count() << std::endl;
   
   //random engine
   std::mt19937 mt(seed);
@@ -154,7 +154,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       nI = data.sampleNegItem(u);
       
       r_ui = estPosRating(u, pI, data, pdt);
-      float r_uj = estNegRating(u, nI, data, pdt);
+      r_uj = estNegRating(u, nI, data, pdt);
       double r_uij = r_ui - r_uj;
       double expCoeff = 1.0 /(1.0 + exp(r_uij));
       
