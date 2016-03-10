@@ -314,7 +314,11 @@ float Model::computeRecallParVec(gk_csr_t *mat, const Data &data, int N,
       }
     }
   } 
-  
+ 
+  std::random_device rd;
+  std::mt19937 g(rd());
+  std::shuffle(testUsers.begin(), testUsers.end(), g);
+
   unsigned long const hwThreads = std::thread::hardware_concurrency();
   //unsigned long const nThreads = std::min(hwThreads != 0? hwThreads:2, NTHREADS);
  
