@@ -131,6 +131,7 @@ class Data {
         std::cout << "\nReading item-features matrix 1-indexed... " << std::endl;
         itemFeatMat = gk_csr_Read(params.itemFeatureFile, GK_CSR_FMT_CSR, 1, CSR1INDEXED);
         if (params.isFeatNorm) {
+          std::cout << "\nNormalizing item features...";
           gk_csr_Normalize(itemFeatMat, GK_CSR_ROW, 2);
         }
         gk_csr_CreateIndex(itemFeatMat, GK_CSR_COL);
@@ -181,9 +182,6 @@ class Data {
         std::cout << "\nReading accumulated features matrix 1-indexed... " << std::endl;
         uFAccumMat = gk_csr_Read(params.featAccumFile, GK_CSR_FMT_CSR, 1, 1);
         gk_csr_CreateIndex(uFAccumMat, GK_CSR_COL);
-        if (params.isFeatNorm) {
-          gk_csr_Normalize(uFAccumMat, GK_CSR_ROW, 2);
-        }
         std::cout << "\nnnz ufaccum: " << getNNZ(uFAccumMat);
       }
 
