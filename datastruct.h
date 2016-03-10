@@ -181,6 +181,9 @@ class Data {
         std::cout << "\nReading accumulated features matrix 1-indexed... " << std::endl;
         uFAccumMat = gk_csr_Read(params.featAccumFile, GK_CSR_FMT_CSR, 1, 1);
         gk_csr_CreateIndex(uFAccumMat, GK_CSR_COL);
+        if (params.isFeatNorm) {
+          gk_csr_Normalize(uFAccumMat, GK_CSR_ROW, 2);
+        }
         std::cout << "\nnnz ufaccum: " << getNNZ(uFAccumMat);
       }
 
