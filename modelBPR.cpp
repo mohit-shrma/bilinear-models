@@ -118,25 +118,26 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   Eigen::VectorXf jFeat(nFeatures);
   Eigen::VectorXf uFeat(nFeatures);
   Eigen::VectorXf pdt(nFeatures);
-  float bestRecall, prevRecall, r_ui;
+  float bestRecall, prevRecall, r_ui, r_uj;
   int trainNNZ = getNNZ(data.trainMat); 
  
   std::chrono::time_point<std::chrono::system_clock> start, end;
   
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
+ 
   
   start = std::chrono::system_clock::now();
-  std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+  //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
   end = std::chrono::system_clock::now();
   std::chrono::duration<double> duration = end - start;
-  std::cout << "\nValidation recall duratin: " << duration.count() << std::endl;
-
-
+  //std::cout << "\nValidation recall duration: " << duration.count() << std::endl;
+  
   //random engine
   std::mt19937 mt(seed);
   
-  auto uiRatings = getUIRatings(data.trainMat);
-  
+  auto uiRatings = getBPRUIRatings(data.trainMat);
+  std::cout << "\nuiRatings size: " << uiRatings.size();
+
   double regMult = (1.0 - 2.0*learnRate*l2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
     //shuffle the user item ratings
@@ -148,21 +149,11 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       //get user, item and rating
       u    = std::get<0>(uiRating);
       pI   = std::get<1>(uiRating);
-      r_ui = std::get<2>(uiRating);
       
-      //skip if negative or 0 rating
-      if (r_ui <= 0) {
-        continue;
-      }
-
-      if (data.posTrainUsers.find(u) != data.posTrainUsers.end()) {
-        //found u, not valid train user
-        continue;
-      }
-
       //sample a negative item for user u
       nI = data.sampleNegItem(u);
-
+      
+      r_ui = estPosRating(u, pI, data, pdt);
       float r_uj = estNegRating(u, nI, data, pdt);
       double r_uij = r_ui - r_uj;
       double expCoeff = 1.0 /(1.0 + exp(r_uij));

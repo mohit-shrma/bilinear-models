@@ -54,7 +54,6 @@ void ModelFactSymBPR::train(const Data& data, Model& bestModel) {
 
   float bestRecall, prevRecall;
   int trainNNZ = getNNZ(data.trainMat); 
-  std::array<int, 3> triplet;
  
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
   std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
@@ -62,16 +61,22 @@ void ModelFactSymBPR::train(const Data& data, Model& bestModel) {
   std::chrono::duration<double> duration;
   float subDuration, valDuration;
 
+  //random engine
+  std::mt19937 mt(seed);
+  auto uiRatings = getBPRUIRatings(data.trainMat);
+  std::cout << "\nuiRatings: " << uiRatings.size();
+  
   for (int iter = 0; iter < maxIter; iter++) {
+    //shuffle the user item ratings
+    std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
     start = std::chrono::system_clock::now();
-    for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
-    //for (int subIter = 0; subIter < 25000; subIter++) {
+    for (auto&& uiRating: uiRatings) {
         
-      //sample triplet
-      triplet = data.sampleTriplet();
-      u = triplet[0];
-      i = triplet[1];
-      j = triplet[2];
+      //get user, item and rating
+      u = std::get<0>(uiRating);
+      i = std::get<1>(uiRating);
+      //sample a negative item for user u
+      j = data.sampleNegItem(u);
       
       extractFeat(data.uFAccumMat, u, uFeat);
       extractFeat(data.itemFeatMat, i, iFeat);

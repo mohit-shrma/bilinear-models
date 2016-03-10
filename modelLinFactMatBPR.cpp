@@ -62,20 +62,26 @@ void ModelLinFactMatBPR::train(const Data &data, Model& bestModel) {
 
   float bestRecall, prevRecall;
   int trainNNZ = getNNZ(data.trainMat); 
-  std::array<int, 3> triplet;
  
   std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
   //std::cout << "val recall: " << computeRecallPar(data.valMat, data, 10, data.valItems) << std::endl;
+  //random engine
+  std::mt19937 mt(seed);
+  
+  auto uiRatings = getBPRUIRatings(data.trainMat);
+  std::cout << "\nuiRatings: " << uiRatings.size();
+  
   for (int iter = 0; iter < maxIter; iter++) {
-    for (int subIter = 0; subIter < trainNNZ*pcSamples; subIter++) {
-    //for (int subIter = 0; subIter < 10000; subIter++) {
+    //shuffle the user item ratings
+    std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
+    for (auto&& uiRating: uiRatings) {
+      //get user, item and rating
+      u = std::get<0>(uiRating);
+      i = std::get<1>(uiRating);
+
+      //sample a negative item for user u
+      j = data.sampleNegItem(u);
         
-      //sample triplet
-      triplet = data.sampleTriplet();
-      u = triplet[0];
-      i = triplet[1];
-      j = triplet[2];
-      
       extractFeat(data.uFAccumMat, u, uFeat);
       extractFeat(data.itemFeatMat, i, iFeat);
       extractFeat(data.itemFeatMat, j, jFeat);

@@ -21,7 +21,7 @@ void ModelBPRFGrad::train(const Data &data, Model& bestModel) {
   //random engine
   std::mt19937 mt(seed);
   
-  auto uiRatings = getUIRatings(data.trainMat);
+  auto uiRatings = getBPRUIRatings(data.trainMat);
   
   std::chrono::time_point<std::chrono::system_clock> start, end;
   double regMult = (1.0 - 2.0*learnRate*l2Reg);
@@ -35,21 +35,11 @@ void ModelBPRFGrad::train(const Data &data, Model& bestModel) {
       //get user, item and rating
       u    = std::get<0>(uiRating);
       pI   = std::get<1>(uiRating);
-      r_ui = std::get<2>(uiRating);
       
-      //skip if negative or 0 rating
-      if (r_ui <= 0) {
-        continue;
-      }
-
-      if (data.posTrainUsers.find(u) != data.posTrainUsers.end()) {
-        //found u, not valid train user
-        continue;
-      }
-
       //sample a negative item for user u
       nI = data.sampleNegItem(u);
-
+      
+      r_ui = estPosRating(u, pI, data, pdt);
       float r_uj = estNegRating(u, nI, data, pdt);
       double r_uij = r_ui - r_uj;
       double expCoeff = 1.0 /(1.0 + exp(r_uij));

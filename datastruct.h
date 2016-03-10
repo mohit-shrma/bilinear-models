@@ -98,6 +98,7 @@ class Data {
       int uFeatNNZ = getNNZ(uFAccumMat);
       std::cout << "\navg u feat/row: " << (double)uFeatNNZ / (double) uFAccumMat->nrows;
       std::cout << "\navg u feat/col: " << (double)uFeatNNZ / (double) uFAccumMat->ncols;
+      std::cout << "\nnposTrainUsers: " << posTrainUsers.size();
     }
 
 

@@ -1,6 +1,6 @@
 #include "util.h"
 
-
+//get users who have atleast one greater than zero rating
 std::unordered_set<int> getPosUsers(gk_csr_t *mat) {
   std::unordered_set<int> userSet;
   for (int u = 0; u < mat->nrows; u++) {
@@ -11,7 +11,6 @@ std::unordered_set<int> getPosUsers(gk_csr_t *mat) {
       }
     }
   }
-
   return userSet;
 }
 
@@ -62,3 +61,17 @@ std::vector<std::tuple<int, int, float>> getUIRatings(gk_csr_t* mat) {
   return uiRatings;
 }
 
+
+std::vector<std::tuple<int, int, float>> getBPRUIRatings(gk_csr_t* mat) {
+  std::vector<std::tuple<int, int, float>> uiRatings;
+  for (int u = 0; u < mat->nrows; u++) {
+    for (int ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
+      int item = mat->rowind[ii];
+      float rating = mat->rowval[ii];
+      if (rating > 0) {
+        uiRatings.push_back(std::make_tuple(u, item, rating));
+      }
+    }
+  }
+  return uiRatings;
+}
