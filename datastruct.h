@@ -278,10 +278,10 @@ class Data {
     int32_t *ui_rowind = trainMat->rowind;
     ssize_t *ui_rowptr = trainMat->rowptr;
     float   *ui_rowval = trainMat->rowval;
-    
+    int nTry = 0; 
     nUserItems = ui_rowptr[u+1] - ui_rowptr[u];
     //sample neg item
-    while(1) {
+    while(nTry < 100) {
       jj = std::rand()%nUserItems;
       if (ui_rowval[jj + ui_rowptr[u]] == 0.0) {
         //explicit 0
@@ -319,8 +319,12 @@ class Data {
           break;
         }
       }
+      nTry++;
     } //end while
-
+    
+    if (100 == nTry) {
+      j = -1;
+    }
 
     return j;
   }

@@ -123,11 +123,8 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
  
   std::chrono::time_point<std::chrono::system_clock> start, end;
   
-  std::cout << "\ntrain nnz: " << trainNNZ << " trainSamples: " << trainNNZ*pcSamples << std::endl;
- 
-  
   start = std::chrono::system_clock::now();
-  std::cout << "val recall: " << computeRecallParVec(data.valMat, data, 10, data.valItems) << std::endl;
+  //std::cout << "val recall: " << computeRecallParVec(data.valMat, data, 10, data.valItems) << std::endl;
   end = std::chrono::system_clock::now();
   std::chrono::duration<double> duration = end - start;
   std::cout << "\nValidation recall duration: " << duration.count() << std::endl;
@@ -136,7 +133,8 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   std::mt19937 mt(seed);
   
   auto uiRatings = getBPRUIRatings(data.trainMat);
-  std::cout << "\nuiRatings size: " << uiRatings.size();
+  int nTrainSamp = uiRatings.size()*pcSamples;
+  std::cout << "\nnBPR ratings: " << uiRatings.size() << " trainSamples: " << nTrainSamp << std::endl;
 
   double regMult = (1.0 - 2.0*learnRate*l2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
@@ -153,11 +151,16 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       //sample a negative item for user u
       nI = data.sampleNegItem(u);
       
+      if (-1 == nI) {
+        //failed to sample negativ item
+        continue;
+      }
+
       r_ui = estPosRating(u, pI, data, pdt);
       r_uj = estNegRating(u, nI, data, pdt);
       double r_uij = r_ui - r_uj;
       double expCoeff = 1.0 /(1.0 + exp(r_uij));
-      
+ 
       //learnRate * expCoeff * f_u * f_i^T
       lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
           learnRate*expCoeff, regMult, subIter, l1Reg);
@@ -169,8 +172,11 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       //-learnRate * expCoeff * f_i * f_i^T
       lazySparseUpdMatWSpOuterPdt(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
           -learnRate*expCoeff, regMult, subIter, l1Reg);
-      
-      subIter++;
+
+      subIter++; 
+      if (subIter >= nTrainSamp) {
+        break;  
+      }
     } 
     
     //perform reg updates on all the pairs
