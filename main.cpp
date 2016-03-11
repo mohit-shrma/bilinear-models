@@ -77,11 +77,11 @@ int main(int argc, char *argv[]) {
   
   m.train(data, bestModel);
   
-  float testRecall = bestModel.computeRecallPar(data.testMat, data, 10, 
+  float testRecall = bestModel.computeRecallParVec(data.testMat, data, 10, 
       data.testItems);
   std::cout << "\nTest recall: " << testRecall;
 
-  float valRecall = bestModel.computeRecallPar(data.valMat, data, 10, 
+  float valRecall = bestModel.computeRecallParVec(data.valMat, data, 10, 
       data.valItems);
   std::cout << "\nVal recall: " << valRecall;
 
