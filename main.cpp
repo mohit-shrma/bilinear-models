@@ -27,7 +27,8 @@ Params parse_cmd_line(int argc, char *argv[]) {
       atof(argv[6]), atof(argv[7]), atof(argv[8]), atof(argv[9]), atof(argv[10]),
       atoi(argv[11]), atoi(argv[12]), atof(argv[13]), atoi(argv[14]), 
       atoi(argv[15]));
-  
+  params.display();
+
   return params;
 }
 
@@ -46,7 +47,7 @@ int main(int argc, char *argv[]) {
   std::chrono::time_point<std::chrono::system_clock> start, end;
  
   //create baseline model
-  ModelCosine cosModel(params, data.nFeatures);
+  //ModelCosine cosModel(params, data.nFeatures);
   /*
   start = std::chrono::system_clock::now();
   float baseRecallPar = cosModel.computeRecallPar(data.testMat, data, 10, 
@@ -62,10 +63,16 @@ int main(int argc, char *argv[]) {
   */
 
   
-  ModelFullMat bestModel(params, data.nFeatures);
+  //ModelFullMat bestModel(params, data.nFeatures);
+  //ModelFactMat bestModel(params, data.nFeatures);
+  //ModelLinFactMat bestModel(params, data.nFeatures);
+  ModelLinear bestModel(params, data.nFeatures);
+
   //ModelRMSEFGrad m(params, data.nFeatures);
   //ModelBPRFGrad m(params, data.nFeatures);
-  ModelBPR m(params, data.nFeatures);
+  //ModelBPR m(params, data.nFeatures);
+  //ModelLinFactMatBPR m(params, data.nFeatures);
+  ModelLinearBPR m(params, data.nFeatures);
   //ModelRMSE m(params, data.nFeatures);
   
   m.train(data, bestModel);
