@@ -25,7 +25,8 @@ class Model {
     
     float l2Reg;
     float l1Reg;
-    float wReg;
+    float wl1Reg;
+    float wl2Reg;
     float nucReg;
     float learnRate;
     float pcSamples;

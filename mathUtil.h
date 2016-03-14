@@ -36,5 +36,9 @@ void lazyUpdMatWSpOuterPdt(Eigen::MatrixXf& W, Eigen::MatrixXf& T,
 void lazySparseUpdMatWSpOuterPdt(Eigen::MatrixXf& W, Eigen::MatrixXf& T, 
     gk_csr_t *mat1, int row1, gk_csr_t *mat2, int row2, double scalar, 
     double regMult, int subIter, float l1Reg);
+void lazySparseUpdMatWSpOuterPdtD(Eigen::MatrixXf& W, Eigen::MatrixXf& T, 
+    gk_csr_t *mat1, int row1, gk_csr_t *mat2, int row2, double scalar, 
+    double regMultDiag, double regMultNDiag, int subIter, float wl1Reg,
+    float l1Reg);
 float proxL1(float x, float l1Reg);
 #endif

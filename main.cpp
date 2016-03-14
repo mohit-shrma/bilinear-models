@@ -18,15 +18,15 @@
 
 Params parse_cmd_line(int argc, char *argv[]) {
   
-  if (argc < 16) {
+  if (argc < 17) {
     std::cout  << "\nNot enough arguments";
     exit(0);
   } 
 
   Params params(argv[1], argv[2], argv[3], argv[4], argv[5],
       atof(argv[6]), atof(argv[7]), atof(argv[8]), atof(argv[9]), atof(argv[10]),
-      atoi(argv[11]), atoi(argv[12]), atof(argv[13]), atoi(argv[14]), 
-      atoi(argv[15]));
+      atoi(argv[11]), atof(argv[12]), atoi(argv[13]), atof(argv[14]), atoi(argv[15]), 
+      atoi(argv[16]));
   params.display();
 
   return params;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   std::cout << "\nVal recall: " << valRecall;
 
   std::cout << "\nRE: " << params.l2Reg << " " << params.l1Reg << " "
-    << params.wReg << " " << params.nucReg << " " << params.learnRate << " " 
+    << params.wl1Reg << " " << params.wl2Reg << " " << params.nucReg << " " << params.learnRate << " " 
     << params.rank << " " << valRecall << " " << testRecall << std::endl;
    
   return 0;

@@ -27,9 +27,16 @@ float ModelRMSE::objective(const Data& data) {
     
   w_norm = W.norm();
   WL2Reg = l2Reg*w_norm*w_norm;
- 
+
+
   WL1Reg = l1Reg*(W.lpNorm<1>());
   
+  //adjust diagonal regularization
+  for (int i = 0; i < nFeatures; i++) {
+    WL2Reg += (wl2Reg - l2Reg)*W(i,i)*W(i,i);
+    WL2Reg += (wl1Reg - l1Reg)*fabs(W(i,i));
+  }
+
   std::cout << "\nTrain RMSE: " << rmse/nnz << std::endl;
   
   obj += rmse/nnz + WL2Reg + WL1Reg;
@@ -141,7 +148,8 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   auto uiRatings = getUIRatings(data.trainMat);
   std::cout << "\nNo. train ratings: " << uiRatings.size() << std::endl;
   std::chrono::time_point<std::chrono::system_clock> startSub, endSub;
-  double regMult =  (1.0 - 2.0*learnRate*l2Reg);
+  double regMultNDiag =  (1.0 - 2.0*learnRate*l2Reg);
+  double regMultDiag =  (1.0 - 2.0*learnRate*wl2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
     //shuffle the user item ratings
     std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
@@ -164,23 +172,37 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
       double err = 2.0*(r_ui_est - r_ui);
 
       //- learnRate * err * f_u * f_i^T
-      lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, item,
-        -learnRate*err, regMult, subIter, l1Reg);
-
+      //lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, item,
+      //  -learnRate*err, regMult, subIter, l1Reg);
+      lazySparseUpdMatWSpOuterPdtD(W, T, data.uFAccumMat, u, data.itemFeatMat, item,
+        -learnRate*err, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
+      
       //learnRate * err * f_i * f_i^T
-      lazySparseUpdMatWSpOuterPdt(W, T, data.itemFeatMat, item, data.itemFeatMat, item,
-          learnRate*err, regMult, subIter, l1Reg);
+      //lazySparseUpdMatWSpOuterPdt(W, T, data.itemFeatMat, item, data.itemFeatMat, item,
+      //    learnRate*err, regMult, subIter, l1Reg);
+      lazySparseUpdMatWSpOuterPdtD(W, T, data.itemFeatMat, item, data.itemFeatMat, item,
+          learnRate*err, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
       subIter++;
     }
 
     //perform reg updates on all the pairs
     for (int ind1 = 0; ind1 < nFeatures; ind1++) {
       for (int ind2 = 0; ind2 < nFeatures; ind2++) {
-        //update with reg updates
-         W(ind1, ind2) = W(ind1, ind2)*pow(regMult, 
+        if (ind1 == ind2){
+          //diagonal entry
+          //update with reg updates
+          W(ind1, ind2) = W(ind1, ind2)*pow(regMultDiag, 
                                            subIter-T(ind1, ind2));
-        //L1 or proximal update
-        W(ind1, ind2) = proxL1(W(ind1, ind2), l1Reg);
+          //L1 or proximal update
+          W(ind1, ind2) = proxL1(W(ind1, ind2), wl1Reg);
+        } else {
+          //non-diagonal entry
+          //update with reg updates
+          W(ind1, ind2) = W(ind1, ind2)*pow(regMultNDiag, 
+                                           subIter-T(ind1, ind2));
+          //L1 or proximal update
+          W(ind1, ind2) = proxL1(W(ind1, ind2), l1Reg);
+        }
       }
     }
     
@@ -204,3 +226,4 @@ void ModelRMSE::train(const Data &data, Model& bestModel) {
   }
 
 }
+

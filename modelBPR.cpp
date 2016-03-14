@@ -136,7 +136,8 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   int nTrainSamp = uiRatings.size()*pcSamples;
   std::cout << "\nnBPR ratings: " << uiRatings.size() << " trainSamples: " << nTrainSamp << std::endl;
 
-  double regMult = (1.0 - 2.0*learnRate*l2Reg);
+  double regMultNDiag =  (1.0 - 2.0*learnRate*l2Reg);
+  double regMultDiag =  (1.0 - 2.0*learnRate*wl2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
     //shuffle the user item ratings
     std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
@@ -162,16 +163,22 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
       double expCoeff = 1.0 /(1.0 + exp(r_uij));
  
       //learnRate * expCoeff * f_u * f_i^T
-      lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
-          learnRate*expCoeff, regMult, subIter, l1Reg);
+      //lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
+      //    learnRate*expCoeff, regMult, subIter, l1Reg);
+      lazySparseUpdMatWSpOuterPdtD(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
+          learnRate*expCoeff, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
       
       //- learnRate * expCoeff * f_u * f_j^T
-      lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
-          -learnRate*expCoeff, regMult, subIter, l1Reg);
+      //lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
+      //    -learnRate*expCoeff, regMult, subIter, l1Reg);
+      lazySparseUpdMatWSpOuterPdtD(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
+          -learnRate*expCoeff, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
 
       //-learnRate * expCoeff * f_i * f_i^T
-      lazySparseUpdMatWSpOuterPdt(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
-          -learnRate*expCoeff, regMult, subIter, l1Reg);
+      //lazySparseUpdMatWSpOuterPdt(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
+      //    -learnRate*expCoeff, regMult, subIter, l1Reg);
+      lazySparseUpdMatWSpOuterPdtD(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
+          -learnRate*expCoeff, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
 
       subIter++; 
       if (subIter >= nTrainSamp) {
@@ -182,11 +189,19 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
     //perform reg updates on all the pairs
     for (int ind1 = 0; ind1 < nFeatures; ind1++) {
       for (int ind2 = 0; ind2 < nFeatures; ind2++) {
-        //update with reg updates
-         W(ind1, ind2) = W(ind1, ind2)*pow(regMult, 
-                                           subIter-T(ind1, ind2));
-        //L1 or proximal update
-        W(ind1, ind2) = proxL1(W(ind1, ind2), l1Reg);
+        if (ind1 == ind2) {
+          //update with reg updates
+          W(ind1, ind2) = W(ind1, ind2)*pow(regMultDiag, 
+                                             subIter-T(ind1, ind2));
+          //L1 or proximal update
+          W(ind1, ind2) = proxL1(W(ind1, ind2), wl1Reg);
+        } else {
+          //update with reg updates
+          W(ind1, ind2) = W(ind1, ind2)*pow(regMultNDiag, 
+                                             subIter-T(ind1, ind2));
+          //L1 or proximal update
+          W(ind1, ind2) = proxL1(W(ind1, ind2), l1Reg);
+        }
       }
     }
 

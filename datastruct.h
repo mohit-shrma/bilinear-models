@@ -21,7 +21,8 @@ class Params {
     
     float l1Reg;
     float l2Reg;
-    float wReg;
+    float wl1Reg;
+    float wl2Reg;
     float nucReg;
     float learnRate;
     int rank;
@@ -34,14 +35,15 @@ class Params {
 
     Params(char *p_trainMatFile, char *p_testMatFile, char *p_valMatFile,
             char *p_itemFeatureFile, char *p_featAccumFile, float p_l1Reg, 
-            float p_l2Reg, float p_wReg, float p_nucReg, float p_learnRate, int p_rank,
-            int p_seed, float p_pcSamples, int p_maxIter, bool p_isFeatNorm)
+            float p_l2Reg, float p_wl1Reg, float p_wl2Reg, float p_nucReg, 
+            float p_learnRate, int p_rank, int p_seed, float p_pcSamples, 
+            int p_maxIter, bool p_isFeatNorm)
             : trainMatFile(p_trainMatFile), testMatFile(p_testMatFile), 
             valMatFile(p_valMatFile), itemFeatureFile(p_itemFeatureFile),
             featAccumFile(p_featAccumFile), l1Reg(p_l1Reg), 
-            l2Reg(p_l2Reg), wReg(p_wReg), nucReg(p_nucReg), learnRate(p_learnRate),
-            rank(p_rank), seed(p_seed), pcSamples(p_pcSamples),
-            maxIter(p_maxIter), isFeatNorm(p_isFeatNorm) {}
+            l2Reg(p_l2Reg), wl1Reg(p_wl1Reg), wl2Reg(p_wl2Reg), nucReg(p_nucReg), 
+            learnRate(p_learnRate),rank(p_rank), seed(p_seed), 
+            pcSamples(p_pcSamples), maxIter(p_maxIter), isFeatNorm(p_isFeatNorm) {}
     
     void display() {
       std::cout << "\n****************** PARAMETERS **************";
@@ -53,7 +55,8 @@ class Params {
 
       std::cout << "\nl1Reg: " << l1Reg;
       std::cout << "\nl2Reg: " << l2Reg;
-      std::cout << "\nwReg: " << wReg;
+      std::cout << "\nwl1Reg: " << wl1Reg;
+      std::cout << "\nwl2Reg: " << wl2Reg;
       std::cout << "\nnucReg: " << nucReg;
       std::cout << "\nlearnRate: " << learnRate;
       std::cout << "\nrank: " << rank;
