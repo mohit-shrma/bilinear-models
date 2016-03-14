@@ -44,20 +44,26 @@ class Params {
             maxIter(p_maxIter), isFeatNorm(p_isFeatNorm) {}
     
     void display() {
+      std::cout << "\n****************** PARAMETERS **************";
       std::cout << "\ntrainMatFile: " << trainMatFile;
       std::cout << "\ntestMatFile: " << testMatFile;
       std::cout << "\nvalMatFile: " << valMatFile;
       std::cout << "\nitemFeatureFile: " << itemFeatureFile;
       std::cout << "\nfeatAccumFile: " << featAccumFile;
+
+      std::cout << "\nl1Reg: " << l1Reg;
       std::cout << "\nl2Reg: " << l2Reg;
       std::cout << "\nwReg: " << wReg;
       std::cout << "\nnucReg: " << nucReg;
       std::cout << "\nlearnRate: " << learnRate;
       std::cout << "\nrank: " << rank;
+
       std::cout << "\nseed: " << seed;
+      
       std::cout << "\npcSamples: " << pcSamples;
       std::cout << "\nmaxIter: " << maxIter;
       std::cout << "\nisFeatNorm: " << isFeatNorm;
+      std::cout << "\n********************************************" << std::endl;
     }
 
 };
