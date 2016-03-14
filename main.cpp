@@ -46,7 +46,8 @@ int main(int argc, char *argv[]) {
   std::chrono::time_point<std::chrono::system_clock> start, end;
  
   //create baseline model
-  ModelCosine cosModel(params, data.nFeatures);
+  //ModelCosine cosModel(params, data.nFeatures);
+
   /*
   start = std::chrono::system_clock::now();
   float baseRecallPar = cosModel.computeRecallPar(data.testMat, data, 10, 
@@ -55,33 +56,35 @@ int main(int argc, char *argv[]) {
   std::chrono::duration<double> duration = end - start;
   std::cout << "\nTest baseline recall par: " << baseRecallPar << " " 
     << duration.count() << std::endl;
-
-  float baseValRecallPar = cosModel.computeRecallPar(data.valMat, data, 10, 
-      data.valItems);
-  std::cout << "\nVal baseline recall par: " << baseValRecallPar << std::endl;
   */
 
+  //float baseValRecallPar = cosModel.computeRecallPar(data.valMat, data, 10, 
+  //    data.valItems);
+  //std::cout << "\nVal baseline recall par: " << baseValRecallPar << std::endl;
   
+  //ModelFactMat bestModel(params, data.nFeatures);
   ModelFullMat bestModel(params, data.nFeatures);
+ 
   //ModelRMSEFGrad m(params, data.nFeatures);
   //ModelBPRFGrad m(params, data.nFeatures);
+  //ModelBPR m(params, data.nFeatures);
+  //ModelRMSE m(params, data.nFeatures);  
   ModelBPR m(params, data.nFeatures);
-  //ModelRMSE m(params, data.nFeatures);
-  
+
   m.train(data, bestModel);
   
-  float testRecall = bestModel.computeRecallPar(data.testMat, data, 10, 
+  float testRecall = bestModel.computeRecallParVec(data.testMat, data, 10, 
       data.testItems);
   std::cout << "\nTest recall: " << testRecall;
 
-  float valRecall = bestModel.computeRecallPar(data.valMat, data, 10, 
+  float valRecall = bestModel.computeRecallParVec(data.valMat, data, 10, 
       data.valItems);
   std::cout << "\nVal recall: " << valRecall;
 
   std::cout << "\nRE: " << params.l2Reg << " " << params.l1Reg << " "
     << params.wReg << " " << params.nucReg << " " << params.learnRate << " " 
     << params.rank << " " << valRecall << " " << testRecall << std::endl;
-  
+   
   return 0;
 }
 
