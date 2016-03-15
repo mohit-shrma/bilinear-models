@@ -23,8 +23,11 @@ void ModelBPRFGrad::train(const Data &data, Model& bestModel) {
   
   auto uiRatings = getBPRUIRatings(data.trainMat);
   
+  std::cout << "\nNo. bpr ratings: " << uiRatings.size() << std::endl;
+
   std::chrono::time_point<std::chrono::system_clock> start, end;
-  double regMult = (1.0 - 2.0*learnRate*l2Reg);
+  double regMultNDiag =  (1.0 - 2.0*learnRate*l2Reg);
+  double regMultDiag =  (1.0 - 2.0*learnRate*wl2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
     //shuffle the user item ratings
     std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
@@ -60,8 +63,18 @@ void ModelBPRFGrad::train(const Data &data, Model& bestModel) {
     } 
     
     //update W
-    W = (W*regMult) - ((learnRate/subIter) *  Wgrad);
-    
+    for (int ind1 = 0; ind1 < nFeatures; ind1++) {
+      for (int ind2 = 0; ind2 < nFeatures; ind2++) {
+        if (ind1 == ind2) {
+          W(ind1, ind2) = W(ind1, ind2)*regMultDiag - 
+            learnRate*Wgrad(ind1, ind2); 
+        } else {
+          W(ind1, ind2) = W(ind1, ind2)*regMultNDiag - 
+            learnRate*Wgrad(ind1, ind2); 
+        }
+      }
+    }
+
     //nuclear norm projection after all sub-iters
     std::chrono::time_point<std::chrono::system_clock> startSVD, endSVD;
     startSVD = std::chrono::system_clock::now();
