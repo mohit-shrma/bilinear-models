@@ -1,12 +1,12 @@
 #!/bin/bash
 
-DATA=
-TRAIN_FILE=""
-TEST_FILE=""
-VAL_FILE=""
-FEAT_FILE=""
-FEAT_ACCUM_FILE=""
-BILINEAR=""
+DATA="/home/grad02/mohit/exmoh/1000ItemSplits//split1"
+TRAIN_FILE=$DATA"/train_user_book.mat"
+TEST_FILE=$DATA"/test_user_book.mat"
+VAL_FILE=$DATA"/val_user_book.mat"
+FEAT_ACCUM_FILE=$DATA"/train_user_featAccu.mat"
+FEAT_FILE="/home/grad02/mohit/exmoh/1000ItemSplits//"
+BILINEAR="/home/grad02/mohit/exmoh/bilinearnuke/biUV"
 
 l2regs=("0.001" "0.01" "0.1" "1")
 l1regs=(0)
@@ -15,7 +15,7 @@ wRegs=("0.001" "0.01" "0.1" "1")
 ranks=(1 5 10 20 30 50)
 learnRates=("0.00001" "0.0001")
 
-opDir=$DATA"/bpr"
+opDir=$DATA"/biUV"
 mkdir $opDir
 
 for rank in "${ranks[@]}";do
