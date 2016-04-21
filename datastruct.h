@@ -46,13 +46,14 @@ class Params {
             pcSamples(p_pcSamples), maxIter(p_maxIter), isFeatNorm(p_isFeatNorm) {}
     
     void display() {
-      std::cout << "\n****************** PARAMETERS **************";
+      std::cout << "\n****************** INPUT **************";
       std::cout << "\ntrainMatFile: " << trainMatFile;
       std::cout << "\ntestMatFile: " << testMatFile;
       std::cout << "\nvalMatFile: " << valMatFile;
       std::cout << "\nitemFeatureFile: " << itemFeatureFile;
       std::cout << "\nfeatAccumFile: " << featAccumFile;
-
+      
+      std::cout << "\n****************** PARAMETERS **************";
       std::cout << "\nl1Reg: " << l1Reg;
       std::cout << "\nl2Reg: " << l2Reg;
       std::cout << "\nwl1Reg: " << wl1Reg;
@@ -107,7 +108,7 @@ class Data {
       int uFeatNNZ = getNNZ(uFAccumMat);
       std::cout << "\navg u feat/row: " << (double)uFeatNNZ / (double) uFAccumMat->nrows;
       std::cout << "\navg u feat/col: " << (double)uFeatNNZ / (double) uFAccumMat->ncols;
-      std::cout << "\nnposTrainUsers: " << posTrainUsers.size();
+      std::cout << "\nnposTrainUsers: " << posTrainUsers.size() << std::endl;
     }
 
 
@@ -118,6 +119,10 @@ class Data {
       itemFeatMat = NULL;
 
       if (NULL != params.trainMatFile) {
+        if (!isFileExist(params.trainMatFile)) {
+          std::cout << "\n!!!Train file NOT FOUND!!!" << std::endl;
+          exit(1);
+        }
         std::cout << "\nReading partial train matrix 1-indexed... " << std::endl;
         trainMat = gk_csr_Read(params.trainMatFile, GK_CSR_FMT_CSR, 1, CSR1INDEXED);
         gk_csr_CreateIndex(trainMat, GK_CSR_COL);
@@ -125,18 +130,30 @@ class Data {
       }
       
       if (NULL != params.testMatFile) {
+        if (!isFileExist(params.testMatFile)) {
+          std::cout << "\n!!!Test file NOT FOUND!!!" << std::endl;
+          exit(1);
+        }
         std::cout << "\nReading partial test matrix 1-indexed... " << std::endl;
         testMat = gk_csr_Read(params.testMatFile, GK_CSR_FMT_CSR, 1, CSR1INDEXED);
         gk_csr_CreateIndex(testMat, GK_CSR_COL);
       }
       
       if (NULL != params.valMatFile) {
+        if (!isFileExist(params.valMatFile)) {
+          std::cout << "\n!!!Val file NOT FOUND!!!" << std::endl;
+          exit(1);
+        }
         std::cout << "\nReading partial val matrix 1-indexed... " << std::endl;
         valMat = gk_csr_Read(params.valMatFile, GK_CSR_FMT_CSR, 1, CSR1INDEXED);
         gk_csr_CreateIndex(valMat, GK_CSR_COL);
       }
       
       if (NULL != params.itemFeatureFile) {
+        if (!isFileExist(params.itemFeatureFile)) {
+          std::cout << "\n!!!Item feature file NOT FOUND!!!" << std::endl;
+          exit(1);
+        }
         std::cout << "\nReading item-features matrix 1-indexed... " << std::endl;
         itemFeatMat = gk_csr_Read(params.itemFeatureFile, GK_CSR_FMT_CSR, 1, CSR1INDEXED);
         if (params.isFeatNorm) {
@@ -149,7 +166,9 @@ class Data {
      
       if (NULL != params.featAccumFile) {
         if (!isFileExist(params.featAccumFile)) {
-          std::cout << "\nUser accumulation file don't exists..." << std::endl;
+          std::cout << "\n!!!User accumulation file NOT FOUND!!!" << std::endl;
+          exit(1);
+          /*
           std::ofstream opMat(params.featAccumFile);
           if (opMat.is_open()) {
             Eigen::MatrixXf uFeatAcuum = Eigen::MatrixXf::Zero(nUsers, nFeatures);
@@ -185,7 +204,7 @@ class Data {
             std::cout << "\nuFeatAccum NNZ: " << tempNNZ <<  " density: "
               << (float)tempNNZ/float(nUsers*nFeatures)  << std::endl;
           }
-          
+          */ 
         }         
 
         std::cout << "\nReading accumulated features matrix 1-indexed... " << std::endl;

@@ -2,19 +2,20 @@
 #include <chrono>
 #include "datastruct.h"
 #include "model.h"
-#include "modelBPR.h"
-#include "modelRMSE.h"
+//#include "modelBPR.h"
+//#include "modelRMSE.h"
 
-#include "modelFactBPR.h"
-#include "modelFactRMSE.h"
-#include "modelCosine.h"
-#include "modelFactSymBPR.h"
-#include "modelFactSymRMSE.h"
-#include "modelLinearRMSE.h"
-#include "modelLinearBPR.h"
+//#include "modelFactBPR.h"
+//#include "modelFactRMSE.h"
+//#include "modelCosine.h"
+//#include "modelFactSymBPR.h"
+#include "modelLinSymBPR.h"
+//#include "modelFactSymRMSE.h"
+//#include "modelLinearRMSE.h"
+//#include "modelLinearBPR.h"
 #include "modelLinFactMatBPR.h"
-#include "modelRMSEFullGrad.h"
-#include "modelBPRFullGrad.h"
+//#include "modelRMSEFullGrad.h"
+//#include "modelBPRFullGrad.h"
 
 Params parse_cmd_line(int argc, char *argv[]) {
   
@@ -62,17 +63,11 @@ int main(int argc, char *argv[]) {
   //    data.valItems);
   //std::cout << "\nVal baseline recall par: " << baseValRecallPar << std::endl;
   
-  ModelFullMat bestModel(params, data.nFeatures);
-  //ModelFactMat bestModel(params, data.nFeatures);
-  //ModelLinFactMat bestModel(params, data.nFeatures);
-  //ModelLinear bestModel(params, data.nFeatures);
+  //ModelLinSym bestModel(params, data.nFeatures);
+  ModelLinFactMat bestModel(params, data.nFeatures);
 
-  //ModelRMSEFGrad m(params, data.nFeatures);
-  //ModelBPRFGrad m(params, data.nFeatures);
-  ModelBPR m(params, data.nFeatures);
-  //ModelLinFactMatBPR m(params, data.nFeatures);
-  //ModelLinearBPR m(params, data.nFeatures);
-  //ModelRMSE m(params, data.nFeatures);
+  //ModelLinSymBPR m(params, data.nFeatures);
+  ModelLinFactMatBPR m(params, data.nFeatures);
   
   m.train(data, bestModel);
   
@@ -85,8 +80,9 @@ int main(int argc, char *argv[]) {
   std::cout << "\nVal recall: " << valRecall;
 
   std::cout << "\nRE: " << params.l2Reg << " " << params.l1Reg << " "
-    << params.wl1Reg << " " << params.wl2Reg << " " << params.nucReg << " " << params.learnRate << " " 
-    << params.rank << " " << valRecall << " " << testRecall << std::endl;
+    << params.wl1Reg << " " << params.wl2Reg << " " << params.nucReg 
+    << " " << params.learnRate << " " << params.rank << " " << valRecall 
+    << " " << testRecall << std::endl;
    
   return 0;
 }
