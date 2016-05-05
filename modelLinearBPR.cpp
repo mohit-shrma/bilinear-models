@@ -9,7 +9,7 @@ void ModelLinearBPR::computewGrad(int u, int i, int j, const Data& data,
   float expCoeff = -1.0/(1.0 + exp(r_uij_est));
   wgrad = ((uFeat - iFeat).cwiseProduct(iFeat)) - uFeat.cwiseProduct(jFeat);
   wgrad *= expCoeff;
-  wgrad += 2.0*wReg*w;
+  wgrad += 2.0*wl2Reg*w;
 }
 
 
@@ -33,7 +33,7 @@ void ModelLinearBPR::train(const Data &data, Model& bestModel) {
   std::mt19937 mt(seed);
   
   auto uiRatings = getBPRUIRatings(data.trainMat);
-  std::cout << "\nuiRatings: " << uiRatings.size();
+  std::cout << "uiRatings: " << uiRatings.size() << std::endl;
   
   for (int iter = 0; iter < maxIter; iter++) {
     //shuffle the user item ratings
