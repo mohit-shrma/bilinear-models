@@ -30,7 +30,7 @@ float ModelLinearRMSE::objective(const Data& data) {
 
 
 void ModelLinearRMSE::train(const Data& data, Model& bestModel) {
-  std::cout << "\nModelLinearRMSE::train";
+  std::cout << "\nModelLinearRMSE::train" << std::endl;
 
   int bestIter;
   Eigen::VectorXf iFeat(nFeatures);

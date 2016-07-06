@@ -11,7 +11,7 @@
 //#include "modelFactSymBPR.h"
 #include "modelLinSymBPR.h"
 //#include "modelFactSymRMSE.h"
-//#include "modelLinearRMSE.h"
+#include "modelLinearRMSE.h"
 //#include "modelLinearBPR.h"
 #include "modelLinFactMatBPR.h"
 //#include "modelRMSEFullGrad.h"
@@ -64,10 +64,10 @@ int main(int argc, char *argv[]) {
   //std::cout << "\nVal baseline recall par: " << baseValRecallPar << std::endl;
   
   //ModelLinSym bestModel(params, data.nFeatures);
-  ModelLinFactMat bestModel(params, data.nFeatures);
+  ModelLinearRMSE bestModel(params, data.nFeatures);
 
   //ModelLinSymBPR m(params, data.nFeatures);
-  ModelLinFactMatBPR m(params, data.nFeatures);
+  ModelLinearRMSE m(params, data.nFeatures);
   
   m.train(data, bestModel);
   

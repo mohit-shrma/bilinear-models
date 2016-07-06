@@ -19,10 +19,10 @@ class Params {
     char *itemFeatureFile;
     char *featAccumFile;
     
-    float l1Reg;
-    float l2Reg;
-    float wl1Reg;
-    float wl2Reg;
+    float l1Reg; //regularization for non-diag component
+    float l2Reg; //regularization for non-diag component 
+    float wl1Reg; //regularization for linear/diag component
+    float wl2Reg; //regularization for linear/diag component
     float nucReg;
     float learnRate;
     int rank;
@@ -168,7 +168,7 @@ class Data {
         if (!isFileExist(params.featAccumFile)) {
           std::cout << "\n!!!User accumulation file NOT FOUND!!!" << std::endl;
           exit(1);
-          /*
+          /* 
           std::ofstream opMat(params.featAccumFile);
           if (opMat.is_open()) {
             Eigen::MatrixXf uFeatAcuum = Eigen::MatrixXf::Zero(nUsers, nFeatures);
@@ -204,7 +204,8 @@ class Data {
             std::cout << "\nuFeatAccum NNZ: " << tempNNZ <<  " density: "
               << (float)tempNNZ/float(nUsers*nFeatures)  << std::endl;
           }
-          */ 
+          */
+           
         }         
 
         std::cout << "\nReading accumulated features matrix 1-indexed... " << std::endl;
