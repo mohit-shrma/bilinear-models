@@ -27,7 +27,7 @@ float ModelLinFactMatRMSE::objective(const Data& data) {
   vReg = norm*norm*l2Reg;
 
   norm = w.norm();
-  w_reg = norm*norm*wReg;
+  w_reg = norm*norm*wl2Reg;
 
   std::cout << "\nmse: " << rmse/nnz << " uReg: " << uReg << " U norm: " << U.norm() 
     << " vReg: " << vReg << " V norm: " << V.norm() << " w_reg: " << w_reg
@@ -66,7 +66,7 @@ void ModelLinFactMatRMSE::computewGrad(Eigen::VectorXf& wgrad, Eigen::VectorXf& 
   r_ui_est  += (((uFeat - iFeat).transpose())*(iFeat.cwiseProduct(w)));
   wgrad = ((uFeat - iFeat).cwiseProduct(iFeat));
   wgrad *= 2.0*(r_ui_est - r_ui);
-  wgrad += 2.0*wReg*w;
+  wgrad += 2.0*wl2Reg*w;
 }
 
 
