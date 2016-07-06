@@ -23,10 +23,10 @@ class Model {
     Eigen::VectorXf w;
     int nFeatures;
     
-    float l2Reg;
-    float l1Reg;
-    float wl1Reg;
-    float wl2Reg;
+    float l2Reg;  //regularization for non-diag component
+    float l1Reg;  //regularization for non-diag component
+    float wl1Reg; //regularization for linear/diag component
+    float wl2Reg; //regularization for linear/diag component
     float nucReg;
     float learnRate;
     float pcSamples;
