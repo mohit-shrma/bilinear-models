@@ -20,7 +20,7 @@ float ModelLinearRMSE::objective(const Data& data) {
   }
  
   norm = w.norm();
-  w_reg = norm*norm*wReg;
+  w_reg = norm*norm*wl2Reg;
 
   std::cout << "\nmse: " << rmse/nnz << " w_reg: " << w_reg << " w norm: " << w.norm(); 
 
@@ -72,7 +72,7 @@ void ModelLinearRMSE::train(const Data& data, Model& bestModel) {
       //r_ui_est
       r_ui_est = ((uFeat - iFeat).transpose())*(iFeat.cwiseProduct(w));
       wgrad = 2.0*(r_ui_est - r_ui)*iFeat.cwiseProduct(uFeat - iFeat);
-      wgrad += 2.0*wReg*w;
+      wgrad += 2.0*wl2Reg*w;
 
       //update U
       w -= learnRate*wgrad;
