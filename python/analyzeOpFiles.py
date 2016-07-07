@@ -44,14 +44,8 @@ def analyzeFiles(fileList):
 
             if line.startswith('RE'):
               cols       = line.strip().split()
-              l2Reg      = cols[1]
-              l1Reg      = cols[2]
-              wl1Reg     = cols[3]
-              wl2Reg     = cols[4]
-              learnRate  = cols[5]
-              rank       = cols[6]
-              valRecall  = float(cols[7])
-              testRecall = float(cols[8])
+              valRecall  = float(cols[8])
+              testRecall = float(cols[9])
               keys.add(bk)      
               updateDic(valRecallDic, bk, valRecall)
               updateDic(testRecallDic, bk, testRecall)
