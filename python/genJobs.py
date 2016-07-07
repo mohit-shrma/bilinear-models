@@ -3,15 +3,15 @@ import os
 
 REGS    = [0.001, 0.01, 0.1, 1, 10]
 
-DIAG_L1_REGS = REGS
+DIAG_L1_REGS = [0]
 DIAG_L2_REGS = REGS
-NDIAG_L1_REGS = REGS
+NDIAG_L1_REGS = [0]
 NDIAG_L2_REGS = REGS
 
 RANKS   = [1, 5, 10]
 
-LEARN_RATE = 0.001
-NSPLITS = 3
+LEARN_RATE = 0.0001
+NSPLITS = 1
 
 def genJobs(prog, data, featMat, prefix):
   for i in range(1, NSPLITS+1):
@@ -31,7 +31,7 @@ def genJobs(prog, data, featMat, prefix):
           for ndl2_reg in NDIAG_L2_REGS:
             for rank in RANKS:
               jobStr = '_'.join(map(str, [dl1_reg, dl2_reg, ndl1_reg, ndl2_reg,
-                rank]))
+                rank, LEARN_RATE]))
               print prog, train, test, val, featMat, featAccu, ndl1_reg, \
                 ndl2_reg, dl1_reg, dl2_reg, 0, LEARN_RATE, rank, 1, 1, 1000, \
                 1, " > " + opDir + "/" + prefix + "_" + jobStr + ".txt"
