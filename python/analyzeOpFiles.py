@@ -31,6 +31,7 @@ def analyzeFiles(fileList):
       if not os.path.isfile(fName):
         print 'NOT_FOUND: ' + fName
       else:
+        isFinished = False
         with open(fName, 'r') as f:
           bName = os.path.basename(fName)
           bk = bName.strip('.txt').split('_')
@@ -49,6 +50,9 @@ def analyzeFiles(fileList):
               keys.add(bk)      
               updateDic(valRecallDic, bk, valRecall)
               updateDic(testRecallDic, bk, testRecall)
+              isFinished = True
+        if not isFinished:
+          print 'NOT_COMP: ', fName
   
   for d in ds:
     averageDic(d)
