@@ -52,7 +52,7 @@ def analyzeFiles(fileList):
               updateDic(testRecallDic, bk, testRecall)
               isFinished = True
         if not isFinished:
-          print 'NOT_COMP: ', fName
+          print 'NOT_COMP: ' + fName
   
   for d in ds:
     averageDic(d)
