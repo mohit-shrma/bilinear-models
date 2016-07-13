@@ -75,3 +75,21 @@ std::vector<std::tuple<int, int, float>> getBPRUIRatings(gk_csr_t* mat) {
   }
   return uiRatings;
 }
+
+
+void matStats(Eigen::MatrixXf& mat) {
+  int nrows = mat.rows();
+  int ncols = mat.cols();
+  std::cout << "nrows: " << nrows << " ncols: " << ncols << std::endl;
+  int nnz = 0;
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < ncols; j++) {
+      if (fabs(mat(i,j)) >= EPS) {
+        nnz++;
+      }
+    }
+  }  
+  std::cout << "nnz: " << nnz << " density: " << (float)nnz/(nrows*ncols) 
+    << std::endl;
+}
+

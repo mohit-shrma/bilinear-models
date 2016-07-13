@@ -467,6 +467,7 @@ float Model::computeRMSE(gk_csr_t *mat, const Data& data) {
   return rmse;
 }
 
+
 int Model::invCount(std::vector<std::array<int,3>> sampTriplets, 
     const Data& data, Eigen::VectorXf& pdt) {
   
@@ -486,3 +487,68 @@ int Model::invCount(std::vector<std::array<int,3>> sampTriplets,
   }
   return invCount;
 }
+
+
+std::string Model::modelSign() {
+  std::string sign;
+  sign = std::to_string(l1Reg) + "_" + std::to_string(l2Reg) + "_" 
+    + std::to_string(wl1Reg) + "_" + std::to_string(wl2Reg) + "_"
+    + std::to_string(nucReg) + "_" + std::to_string(learnRate) + "_"
+    + std::to_string(rank);
+  return sign;
+}
+
+
+void Model::save(std::string opPrefix) {
+  std::string sign = modelSign();
+  
+  //save U
+  std::string fName = opPrefix + "_" + sign + "_U.eigen";
+  writeEigenMat(U, fName);
+
+  //save V
+  fName = opPrefix + "_" + sign + "_V.eigen";
+  writeEigenMat(V, fName);
+
+  //save W
+  fName = opPrefix + "_" + sign + "_W.eigen";
+  writeBinEigenMat(W, fName);
+
+  //save w
+  fName = opPrefix + "_" + sign + "_w.eigen";
+  writeEigenVec(w, fName);
+
+}
+
+
+void Model::load(std::string opPrefix) {
+  std::string sign = modelSign();
+  
+  //load U
+  std::string fName = opPrefix + "_" + sign + "_U.eigen";
+  if (isFileExist(fName.c_str())) {
+    readEigenMat(fName.c_str(), U, nFeatures, rank);
+  }
+
+  //load V
+  fName = opPrefix + "_" + sign + "_V.eigen";
+  if (isFileExist(fName.c_str())) {
+    readEigenMat(fName.c_str(), V, nFeatures, rank);
+  }
+
+  //load W
+  fName = opPrefix + "_" + sign + "_W.eigen";
+  if (isFileExist(fName.c_str())) {
+    readBinEigenMat(fName.c_str(), W, nFeatures, nFeatures);
+  }
+
+  //load w
+  fName = opPrefix + "_" + sign + "_w.eigen";
+  if (isFileExist(fName.c_str())) {
+    readEigenVec(fName.c_str(), w, nFeatures);
+  }
+
+}
+
+
+

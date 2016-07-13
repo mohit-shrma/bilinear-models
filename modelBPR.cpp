@@ -1,5 +1,40 @@
 #include "modelBPR.h"
 
+bool ModelBPR::isTerminateModel(Model& bestModel, const Data& data, int iter,
+    int& bestIter, float& bestRecall, float& prevRecall) {
+
+  bool ret = false;
+  float currRecall = computeRecallParVec(data.valMat, data, 10, data.valItems);
+  
+  if (iter >= 0) {
+    
+    if (currRecall > bestRecall) {
+      bestModel = *this;
+      bestRecall = currRecall;
+      bestIter = iter;
+    }
+    
+    if (iter - bestIter >= CHANCE_ITER) {
+      std::cout << "\nNOT CONVERGED: bestIter: " << bestIter << 
+        " bestRecall: " << bestRecall << " currIter: " << iter << 
+        " currRecall: " << currRecall << std::endl;
+      ret = true;
+    }
+
+    if (fabs(prevRecall - currRecall) < EPS) {
+      //convergence
+      std::cout << "\nConverged in iteration: " << iter << " prevRecall: "
+        << prevRecall << " currRecall: " << currRecall;
+      ret = true;
+    }
+
+  }
+
+
+  prevRecall = currRecall;
+
+  return ret;
+}
 
 
 void ModelBPR::computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
@@ -110,6 +145,10 @@ void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
 void ModelBPR::train(const Data &data, Model& bestModel) {
 
   std::cout << "\nModelBPR::train" << std::endl;
+  
+  std::string prefix = "ModelBPR";
+
+  load(prefix);
 
   int bestIter, u, pI, nI;
   Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
@@ -122,13 +161,20 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   int trainNNZ = getNNZ(data.trainMat); 
  
   std::chrono::time_point<std::chrono::system_clock> start, end;
+  std::chrono::duration<double> duration; 
   
   start = std::chrono::system_clock::now();
-  //std::cout << "val recall: " << computeRecallParVec(data.valMat, data, 10, data.valItems) << std::endl;
-  end = std::chrono::system_clock::now();
-  std::chrono::duration<double> duration = end - start;
-  std::cout << "\nValidation recall duration: " << duration.count() << std::endl;
   
+  bestRecall = computeRecallParVec(data.valMat, data, 10, data.valItems);
+  bestIter   = -1;
+  bestModel  = *this;
+  prevRecall = bestRecall;
+
+  std::cout << "val recall: " <<  bestRecall << std::endl;
+  end = std::chrono::system_clock::now();
+  duration = end - start;
+  std::cout << "\nValidation recall duration: " << duration.count() << std::endl;
+
   //random engine
   std::mt19937 mt(seed);
   
@@ -208,17 +254,24 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
 
     end = std::chrono::system_clock::now();
     duration = end - start;
-    
+    auto subDuration = duration;
+
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
+      start = std::chrono::system_clock::now();
       if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
           prevRecall)) {
         break;
       }
+      end = std::chrono::system_clock::now();
+      duration = end - start;
       std::cout << "\niter: " << iter << " val recall: " << prevRecall
-        << " best recall: " << bestRecall << " duration: " 
-        << duration.count() << std::endl;
-      std::cout << "\nW norm: " << W.norm();
+        << " best recall: " << bestRecall 
+        << " subiter duration: " << subDuration.count() 
+        << " recall duration: " << duration.count() << std::endl;
+      std::cout << "W norm: " << W.norm() << std::endl;
+
+      bestModel.save(prefix);
     }
   
   }

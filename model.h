@@ -70,6 +70,10 @@ class Model {
       const Data& data, int N, std::unordered_set<int>& items, 
       std::vector<bool>& isTestUser, std::vector<float>& uRecalls,
       std::vector<int>& testUsers);
+
+    std::string modelSign();
+    void save(std::string opPrefix);
+    void load(std::string opPrefix);
 };
 
 #endif
