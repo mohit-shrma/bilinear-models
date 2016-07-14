@@ -21,7 +21,7 @@ class ModelBPR: public ModelFullMat {
       Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data);
     void gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
       Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad);
-    void updUIRatings(std::vector<std::tuple<int, int, float>>& uiRatings, 
+    void updUIRatings(std::vector<std::tuple<int, int, int>>& bprTriplets, 
       const Data& data, Eigen::MatrixXf& T, int& subIter, int nTrainSamp, int start, int end);
     void parTrain(const Data &data, Model& bestModel);
 };
