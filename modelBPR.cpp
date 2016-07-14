@@ -276,7 +276,7 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
 
     //main thread
     int startInd = (nThreads-1)*nRatingsPerThread;
-    int endInd = uiRatings.size();
+    int endInd = bprTriplets.size();
     updUIRatings(bprTriplets, data, T, subIter, nTrainSamp, 
         startInd, endInd);
 
