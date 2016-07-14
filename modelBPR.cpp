@@ -142,6 +142,187 @@ void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
 }
 
 
+void ModelBPR::updUIRatings(std::vector<std::tuple<int, int, float>>& uiRatings, 
+    const Data& data, Eigen::MatrixXf& T, int& subIter, int nTrainSamp, int start, int end) {
+
+  double regMultNDiag =  (1.0 - 2.0*learnRate*l2Reg);
+  double regMultDiag =  (1.0 - 2.0*learnRate*wl2Reg);
+  int u, pI, nI;
+  Eigen::VectorXf pdt(nFeatures);
+  float r_ui, r_uj;
+  
+  for (int i = start; i < end; i++) {
+    auto uiRating = uiRatings[i];
+    //get user, item and rating
+    u    = std::get<0>(uiRating);
+    pI   = std::get<1>(uiRating);
+    
+    //sample a negative item for user u
+    nI = data.sampleNegItem(u);
+    
+    if (-1 == nI) {
+      //failed to sample negativ item
+      continue;
+    }
+
+    r_ui = estPosRating(u, pI, data, pdt);
+    r_uj = estNegRating(u, nI, data, pdt);
+    double r_uij = r_ui - r_uj;
+    double expCoeff = 1.0 /(1.0 + exp(r_uij));
+
+    //learnRate * expCoeff * f_u * f_i^T
+    //lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
+    //    learnRate*expCoeff, regMult, subIter, l1Reg);
+    lazySparseUpdMatWSpOuterPdtD(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
+        learnRate*expCoeff, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
+    
+    //- learnRate * expCoeff * f_u * f_j^T
+    //lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
+    //    -learnRate*expCoeff, regMult, subIter, l1Reg);
+    lazySparseUpdMatWSpOuterPdtD(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
+        -learnRate*expCoeff, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
+
+    //-learnRate * expCoeff * f_i * f_i^T
+    //lazySparseUpdMatWSpOuterPdt(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
+    //    -learnRate*expCoeff, regMult, subIter, l1Reg);
+    lazySparseUpdMatWSpOuterPdtD(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
+        -learnRate*expCoeff, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
+
+    subIter++; 
+    if (subIter >= nTrainSamp) {
+      break;  
+    }
+  } 
+}
+
+
+void ModelBPR::parTrain(const Data &data, Model& bestModel) {
+
+  std::cout << "\nModelBPR::parTrain" << std::endl;
+  
+  std::string prefix = "ModelBPR";
+
+  load(prefix);
+
+  int bestIter, u, pI, nI;
+  Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
+  Eigen::MatrixXf T(nFeatures, nFeatures);
+  Eigen::VectorXf iFeat(nFeatures);
+  Eigen::VectorXf jFeat(nFeatures);
+  Eigen::VectorXf uFeat(nFeatures);
+  float bestRecall, prevRecall;
+ 
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  std::chrono::duration<double> duration; 
+  
+  start = std::chrono::system_clock::now();
+  
+  bestRecall = computeRecallParVec(data.valMat, data, 10, data.valItems);
+  bestIter   = -1;
+  bestModel  = *this;
+  prevRecall = bestRecall;
+
+  std::cout << "val recall: " <<  bestRecall << std::endl;
+  end = std::chrono::system_clock::now();
+  duration = end - start;
+  std::cout << "\nValidation recall duration: " << duration.count() << std::endl;
+
+  unsigned long const hwThreads = std::thread::hardware_concurrency();
+  int nThreads = NTHREADS;
+  if (hwThreads > 0  && hwThreads < NTHREADS) {
+    nThreads = hwThreads;
+  }
+
+
+
+  //random engine
+  std::mt19937 mt(seed);
+  
+  auto uiRatings = getBPRUIRatings(data.trainMat);
+  int nTrainSamp = uiRatings.size()*pcSamples;
+  std::cout << "\nnBPR ratings: " << uiRatings.size() << " trainSamples: " << nTrainSamp << std::endl;
+
+  double regMultNDiag =  (1.0 - 2.0*learnRate*l2Reg);
+  double regMultDiag =  (1.0 - 2.0*learnRate*wl2Reg);
+  for (int iter = 0; iter < maxIter; iter++) {
+    //shuffle the user item ratings
+    std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
+    start = std::chrono::system_clock::now();
+    T.fill(0);
+    int subIter = 0;
+
+    //call par methods on threads
+    
+    //allocate threads
+    std::vector<std::thread> threads(nThreads-1);
+    int nRatingsPerThread = uiRatings.size()/nThreads;
+    for (int thInd = 0; thInd < nThreads-1; thInd++) {
+      int startInd = thInd*nRatingsPerThread;
+      int endInd = (thInd+1)*nRatingsPerThread;
+      threads[thInd++] = std::thread(&ModelBPR::updUIRatings, this, std::ref(uiRatings),
+          std::ref(data), std::ref(T), std::ref(subIter), nTrainSamp, 
+          startInd, endInd);   
+    
+    }
+
+    //main thread
+    int startInd = (nThreads-1)*nRatingsPerThread;
+    int endInd = uiRatings.size();
+    updUIRatings(uiRatings, data, T, subIter, nTrainSamp, 
+        startInd, endInd);
+
+    //wait for threads to finish
+    std::for_each(threads.begin(), threads.end(), 
+        std::mem_fn(&std::thread::join));
+
+    
+    //perform reg updates on all the pairs
+    for (int ind1 = 0; ind1 < nFeatures; ind1++) {
+      for (int ind2 = 0; ind2 < nFeatures; ind2++) {
+        if (ind1 == ind2) {
+          //update with reg updates
+          W(ind1, ind2) = W(ind1, ind2)*pow(regMultDiag, 
+                                             subIter-T(ind1, ind2));
+          //L1 or proximal update
+          W(ind1, ind2) = proxL1(W(ind1, ind2), wl1Reg);
+        } else {
+          //update with reg updates
+          W(ind1, ind2) = W(ind1, ind2)*pow(regMultNDiag, 
+                                             subIter-T(ind1, ind2));
+          //L1 or proximal update
+          W(ind1, ind2) = proxL1(W(ind1, ind2), l1Reg);
+        }
+      }
+    }
+
+
+    end = std::chrono::system_clock::now();
+    duration = end - start;
+    auto subDuration = duration;
+
+    //perform model evaluation on validation set
+    if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
+      start = std::chrono::system_clock::now();
+      if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
+          prevRecall)) {
+        break;
+      }
+      end = std::chrono::system_clock::now();
+      duration = end - start;
+      std::cout << "\niter: " << iter << " val recall: " << prevRecall
+        << " best recall: " << bestRecall 
+        << " subiter duration: " << subDuration.count() 
+        << " recall duration: " << duration.count() << std::endl;
+      std::cout << "W norm: " << W.norm() << std::endl;
+
+      bestModel.save(prefix);
+    }
+  
+  }
+  
+}
+
+
 void ModelBPR::train(const Data &data, Model& bestModel) {
 
   std::cout << "\nModelBPR::train" << std::endl;
