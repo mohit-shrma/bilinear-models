@@ -142,7 +142,7 @@ void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
 }
 
 
-void ModelBPR::updUIRatings(std::vector<std::tuple<int, int, float>>& uiRatings, 
+void ModelBPR::updUIRatings(std::vector<std::tuple<int, int, int>>& bprTriplets, 
     const Data& data, Eigen::MatrixXf& T, int& subIter, int nTrainSamp, int start, int end) {
 
   double regMultNDiag =  (1.0 - 2.0*learnRate*l2Reg);
@@ -152,19 +152,12 @@ void ModelBPR::updUIRatings(std::vector<std::tuple<int, int, float>>& uiRatings,
   float r_ui, r_uj;
   
   for (int i = start; i < end; i++) {
-    auto uiRating = uiRatings[i];
+    auto bprTriplet = bprTriplets[i];
     //get user, item and rating
-    u    = std::get<0>(uiRating);
-    pI   = std::get<1>(uiRating);
+    u    = std::get<0>(bprTriplet);
+    pI   = std::get<1>(bprTriplet);
+    nI   = std::get<2>(bprTriplet);
     
-    //sample a negative item for user u
-    nI = data.sampleNegItem(u);
-    
-    if (-1 == nI) {
-      //failed to sample negativ item
-      continue;
-    }
-
     r_ui = estPosRating(u, pI, data, pdt);
     r_uj = estNegRating(u, nI, data, pdt);
     double r_uij = r_ui - r_uj;
@@ -242,6 +235,8 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
   int nTrainSamp = uiRatings.size()*pcSamples;
   std::cout << "\nnBPR ratings: " << uiRatings.size() << " trainSamples: " << nTrainSamp << std::endl;
 
+  std::vector<std::tuple<int, int, int>> bprTriplets;
+
   double regMultNDiag =  (1.0 - 2.0*learnRate*l2Reg);
   double regMultDiag =  (1.0 - 2.0*learnRate*wl2Reg);
   for (int iter = 0; iter < maxIter; iter++) {
@@ -251,15 +246,29 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
     T.fill(0);
     int subIter = 0;
 
+    bprTriplets.clear();
+    for (auto&& uiRating: uiRatings) {
+      //get user, item and rating
+      u    = std::get<0>(uiRating);
+      pI   = std::get<1>(uiRating);
+      //sample a negative item for user u
+      nI = data.sampleNegItem(u);
+      if (-1 == nI) {
+        //failed to sample negativ item
+        continue;
+      }
+      bprTriplets.push_back(std::make_tuple(u, pI, nI)); 
+    }
+
     //call par methods on threads
     
     //allocate threads
     std::vector<std::thread> threads(nThreads-1);
-    int nRatingsPerThread = uiRatings.size()/nThreads;
+    int nRatingsPerThread = bprTriplets.size()/nThreads;
     for (int thInd = 0; thInd < nThreads-1; thInd++) {
       int startInd = thInd*nRatingsPerThread;
       int endInd = (thInd+1)*nRatingsPerThread;
-      threads[thInd++] = std::thread(&ModelBPR::updUIRatings, this, std::ref(uiRatings),
+      threads[thInd++] = std::thread(&ModelBPR::updUIRatings, this, std::ref(bprTriplets),
           std::ref(data), std::ref(T), std::ref(subIter), nTrainSamp, 
           startInd, endInd);   
     
@@ -268,7 +277,7 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
     //main thread
     int startInd = (nThreads-1)*nRatingsPerThread;
     int endInd = uiRatings.size();
-    updUIRatings(uiRatings, data, T, subIter, nTrainSamp, 
+    updUIRatings(bprTriplets, data, T, subIter, nTrainSamp, 
         startInd, endInd);
 
     //wait for threads to finish
