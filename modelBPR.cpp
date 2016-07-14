@@ -226,7 +226,7 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
     nThreads = hwThreads;
   }
 
-
+  std::cout << "nthreads: " << nThreads << std::endl;
 
   //random engine
   std::mt19937 mt(seed);
@@ -259,31 +259,34 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
       }
       bprTriplets.push_back(std::make_tuple(u, pI, nI)); 
     }
-
+    
+    std::cout << "bprTriplets: " << bprTriplets.size() << std::endl;
     //call par methods on threads
     
     //allocate threads
     std::vector<std::thread> threads(nThreads-1);
     int nRatingsPerThread = bprTriplets.size()/nThreads;
+    std::cout << "nRatingsPerThread: " << nRatingsPerThread << std::endl;
     for (int thInd = 0; thInd < nThreads-1; thInd++) {
       int startInd = thInd*nRatingsPerThread;
       int endInd = (thInd+1)*nRatingsPerThread;
-      threads[thInd++] = std::thread(&ModelBPR::updUIRatings, this, std::ref(bprTriplets),
+      //std::cout << "thread: " << thInd << " " << startInd << " " << endInd << std::endl; 
+      threads[thInd] = std::thread(&ModelBPR::updUIRatings, this, std::ref(bprTriplets),
           std::ref(data), std::ref(T), std::ref(subIter), nTrainSamp, 
           startInd, endInd);   
     
-    }
+    } 
 
     //main thread
     int startInd = (nThreads-1)*nRatingsPerThread;
     int endInd = bprTriplets.size();
+    //std::cout << "main thread: " << startInd << " " << endInd << std::endl;
     updUIRatings(bprTriplets, data, T, subIter, nTrainSamp, 
         startInd, endInd);
 
     //wait for threads to finish
     std::for_each(threads.begin(), threads.end(), 
         std::mem_fn(&std::thread::join));
-
     
     //perform reg updates on all the pairs
     for (int ind1 = 0; ind1 < nFeatures; ind1++) {
