@@ -162,24 +162,24 @@ void ModelBPR::updUIRatings(std::vector<std::tuple<int, int, int>>& bprTriplets,
     r_uj = estNegRating(u, nI, data, pdt);
     double r_uij = r_ui - r_uj;
     double expCoeff = 1.0 /(1.0 + exp(r_uij));
-
+    int locSubIter = subIter;
     //learnRate * expCoeff * f_u * f_i^T
     //lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
     //    learnRate*expCoeff, regMult, subIter, l1Reg);
     lazySparseUpdMatWSpOuterPdtD(W, T, data.uFAccumMat, u, data.itemFeatMat, pI, 
-        learnRate*expCoeff, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
+        learnRate*expCoeff, regMultDiag, regMultNDiag, locSubIter, wl1Reg, l1Reg);
     
     //- learnRate * expCoeff * f_u * f_j^T
     //lazySparseUpdMatWSpOuterPdt(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
     //    -learnRate*expCoeff, regMult, subIter, l1Reg);
     lazySparseUpdMatWSpOuterPdtD(W, T, data.uFAccumMat, u, data.itemFeatMat, nI, 
-        -learnRate*expCoeff, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
+        -learnRate*expCoeff, regMultDiag, regMultNDiag, locSubIter, wl1Reg, l1Reg);
 
     //-learnRate * expCoeff * f_i * f_i^T
     //lazySparseUpdMatWSpOuterPdt(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
     //    -learnRate*expCoeff, regMult, subIter, l1Reg);
     lazySparseUpdMatWSpOuterPdtD(W, T, data.itemFeatMat, pI, data.itemFeatMat, pI, 
-        -learnRate*expCoeff, regMultDiag, regMultNDiag, subIter, wl1Reg, l1Reg);
+        -learnRate*expCoeff, regMultDiag, regMultNDiag, locSubIter, wl1Reg, l1Reg);
 
     subIter++; 
     if (subIter >= nTrainSamp) {
@@ -287,7 +287,7 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
     //wait for threads to finish
     std::for_each(threads.begin(), threads.end(), 
         std::mem_fn(&std::thread::join));
-    
+     
     //perform reg updates on all the pairs
     for (int ind1 = 0; ind1 < nFeatures; ind1++) {
       for (int ind2 = 0; ind2 < nFeatures; ind2++) {
@@ -322,7 +322,7 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
       end = std::chrono::system_clock::now();
       duration = end - start;
       std::cout << "\niter: " << iter << " val recall: " << prevRecall
-        << " best recall: " << bestRecall 
+        << " best recall: " << bestRecall << " subiter count: " << subIter 
         << " subiter duration: " << subDuration.count() 
         << " recall duration: " << duration.count() << std::endl;
       std::cout << "W norm: " << W.norm() << std::endl;
