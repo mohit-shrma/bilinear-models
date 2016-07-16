@@ -1,6 +1,6 @@
 #include "modelBPR.h"
 
-bool ModelBPR::isTerminateModel(Model& bestModel, const Data& data, int iter,
+bool ModelBPR::isTerminateModelInit(Model& bestModel, const Data& data, int iter,
     int& bestIter, float& bestRecall, float& prevRecall) {
 
   bool ret = false;
@@ -210,11 +210,6 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
   
   start = std::chrono::system_clock::now();
   
-  bestRecall = computeRecallParVec(data.valMat, data, 10, data.valItems);
-  bestIter   = -1;
-  bestModel  = *this;
-  prevRecall = bestRecall;
-
   std::cout << "val recall: " <<  bestRecall << std::endl;
   end = std::chrono::system_clock::now();
   duration = end - start;
@@ -452,7 +447,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
       start = std::chrono::system_clock::now();
-      if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
+      if(isTerminateModelInit(bestModel, data, iter, bestIter, bestRecall, 
           prevRecall)) {
         break;
       }
