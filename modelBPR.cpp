@@ -467,7 +467,7 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
 
 void ModelBPR::FTRLTrain(const Data &data, Model& bestModel) {
 
-  std::cout << "\nModelBPR::train" << std::endl;
+  std::cout << "\nModelBPR::FTRLTrain" << std::endl;
   
   std::string prefix = "ModelBPR";
 
