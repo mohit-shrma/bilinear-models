@@ -56,7 +56,8 @@ void ModelBPR::computeBPRGrad(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat,
 
 
 void ModelBPR::computeBPRSparseGrad(int u, int i, int j, 
-    Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data) {
+    Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data,
+    std::map<int, std::unordered_set<int>>& coords) {
   
   float r_ui, r_uj, r_uij, expCoeff;
    
@@ -64,27 +65,24 @@ void ModelBPR::computeBPRSparseGrad(int u, int i, int j,
   r_uj  = estNegRating(u, j, data, pdt);
   r_uij = r_ui - r_uj;
    
-  Wgrad.fill(0);
+  Wgrad.setZero(nFeatures, nFeatures);
+  coords.clear();
+
   //need to update W as j has higher preference
   expCoeff = 1.0/(1.0 + exp(r_uij));  
 
-  //-f_u*f_i^T
-  updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, i, 
-      -1);
+  //-f_u*f_i^T  * expCoeff
+  updateMatWSpOuterPdtWMap(Wgrad, data.uFAccumMat, u, data.itemFeatMat, i, 
+      -expCoeff, coords);
 
-  //f_u*f_j^T
-  updateMatWSpOuterPdt(Wgrad, data.uFAccumMat, u, data.itemFeatMat, j, 
-      1);
+  //f_u*f_j^T  * expCoeff
+  updateMatWSpOuterPdtWMap(Wgrad, data.uFAccumMat, u, data.itemFeatMat, j, 
+      expCoeff, coords);
 
-  //f_i*f_i^T
-  updateMatWSpOuterPdt(Wgrad, data.itemFeatMat, i, data.itemFeatMat, i, 
-      1);
+  //f_i*f_i^T  * expCoeff
+  updateMatWSpOuterPdtWMap(Wgrad, data.itemFeatMat, i, data.itemFeatMat, i, 
+      expCoeff, coords);
   
-  Wgrad *= expCoeff;
-  
-  //add Wgrad to gradient of l2 reg
-  Wgrad += 2.0*l2Reg*W;
-
 }
 
 
@@ -466,3 +464,135 @@ void ModelBPR::train(const Data &data, Model& bestModel) {
   
 }
 
+
+void ModelBPR::FTRLTrain(const Data &data, Model& bestModel) {
+
+  std::cout << "\nModelBPR::train" << std::endl;
+  
+  std::string prefix = "ModelBPR";
+
+  load(prefix);
+
+  int bestIter, u, pI, nI;
+  
+  Eigen::MatrixXf Wgrad(nFeatures, nFeatures);  
+  Eigen::MatrixXf z(nFeatures, nFeatures);
+  Eigen::MatrixXf n(nFeatures, nFeatures);
+
+  Eigen::VectorXf iFeat(nFeatures);
+  Eigen::VectorXf jFeat(nFeatures);
+  Eigen::VectorXf uFeat(nFeatures);
+  Eigen::VectorXf pdt(nFeatures);
+
+  std::map<int, std::unordered_set<int>> coords;
+
+  float bestRecall, prevRecall;
+  int trainNNZ = getNNZ(data.trainMat); 
+ 
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  std::chrono::duration<double> duration; 
+  
+  //random engine
+  std::mt19937 mt(seed);
+  
+  auto uiRatings = getBPRUIRatings(data.trainMat);
+  int nTrainSamp = uiRatings.size()*pcSamples;
+  std::cout << "\nnBPR ratings: " << uiRatings.size() << " trainSamples: " << nTrainSamp << std::endl;
+
+  z.fill(0);
+  n.fill(0);
+  float alpha = learnRate;
+  float beta = learnRate;
+  float lambda1, lambda2, coeff, signz;
+
+  for (int iter = 0; iter < maxIter; iter++) {
+    //shuffle the user item ratings
+    std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
+    start = std::chrono::system_clock::now();
+    int subIter = 0;
+    for (auto&& uiRating: uiRatings) {
+      //get user, item and rating
+      u    = std::get<0>(uiRating);
+      pI   = std::get<1>(uiRating);
+      
+      //sample a negative item for user u
+      nI = data.sampleNegItem(u);
+      
+      if (-1 == nI) {
+        //failed to sample negativ item
+        continue;
+      }
+
+
+      computeBPRSparseGrad(u, pI, nI, Wgrad, pdt, data, coords);
+
+      //go through the pairs
+      for (auto&& kv: coords) {
+        int ind1 = kv.first;
+        for (auto&& ind2: kv.second) {
+          if (ind1 == ind2) {
+            lambda1 = wl1Reg;
+            lambda2 = wl2Reg;
+          } else {
+            lambda1 = l1Reg;
+            lambda2 = l2Reg;
+          }
+
+          if (z(ind1, ind2) >= -lambda1 && z(ind1, ind2) <= lambda1) {
+            W(ind1, ind2) = 0;
+          } else {
+            coeff = -1.0/(((beta + std::sqrt(n(ind1, ind2)))/alpha) + lambda2);
+            signz = -1;
+            if (z(ind1, ind2) > 0) {
+              signz = 1;
+            }
+            W(ind1, ind2) = coeff*(z(ind1, ind2) - signz*lambda1);
+          }
+
+        }
+      }
+      
+      //go through the pairs
+      for (auto&& kv: coords) {
+        int ind1 = kv.first;
+        for (auto&& ind2: kv.second) {
+          //adagrad book keeping
+          float sigma = (1.0/alpha)*(std::sqrt(n(ind1, ind2) + 
+                Wgrad(ind1, ind2)*Wgrad(ind1, ind2)) - std::sqrt(n(ind1, ind2)));
+          z(ind1, ind2) += Wgrad(ind1, ind2) - sigma*W(ind1, ind2);
+          n(ind1, ind2) += Wgrad(ind1, ind2)*Wgrad(ind1, ind2);
+        }
+      }
+
+
+      subIter++; 
+      if (subIter >= nTrainSamp) {
+        break;  
+      }
+    } 
+    
+    end = std::chrono::system_clock::now();
+    duration = end - start;
+    auto subDuration = duration;
+
+    //perform model evaluation on validation set
+    if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
+      start = std::chrono::system_clock::now();
+      if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
+          prevRecall)) {
+        break;
+      }
+      end = std::chrono::system_clock::now();
+      duration = end - start;
+      std::cout << "\niter: " << iter << " val recall: " << prevRecall
+        << " best recall: " << bestRecall 
+        << " subiter duration: " << subDuration.count() 
+        << " recall duration: " << duration.count() << std::endl;
+      std::cout << "W norm: " << W.norm() << std::endl;
+
+      bestModel.save(prefix);
+    }
+  
+  }
+  
+}

@@ -8,6 +8,8 @@
 #include <thread>
 #include <random>
 #include <tuple>
+#include <map>
+#include <unordered_set>
 #include "mathUtil.h"
 #include "const.h"
 #include "datastruct.h"

@@ -250,6 +250,31 @@ void updateMatWSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1,
 }
 
 
+void updateMatWSpOuterPdtWMap(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1, 
+    gk_csr_t *mat2, int row2, float scalar, 
+    std::map<int, std::unordered_set<int>>& coords) {
+  
+  int ind1, ind2;
+  int ii1, ii2;
+  float val1, val2;
+  
+  for (ii2 = mat2->rowptr[row2]; ii2 < mat2->rowptr[row2+1]; ii2++) {
+    ind2 = mat2->rowind[ii2];
+    val2 = mat2->rowval[ii2];
+    for (ii1 = mat1->rowptr[row1]; ii1 < mat1->rowptr[row1+1]; ii1++) {
+      ind1 = mat1->rowind[ii1];
+      val1 = mat1->rowval[ii1];
+      W(ind1, ind2) += scalar*val1*val2;
+      if (coords.count(ind1) == 0) {
+        coords[ind1] = std::unordered_set<int>();
+      }
+      coords[ind1].insert(ind2);
+    }
+  }
+
+}
+
+
 //update matrix with sign*vec*vec^T
 void lazyUpdMatWSpOuterPdt(Eigen::MatrixXf& W, Eigen::MatrixXf& T, 
     gk_csr_t *mat1, int row1, gk_csr_t *mat2, int row2, double scalar, 

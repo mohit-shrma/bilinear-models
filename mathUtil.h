@@ -3,6 +3,8 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <map>
+#include <unordered_set>
 #include "GKlib.h"
 extern "C" {
   #include "svdlib.h"
@@ -41,4 +43,7 @@ void lazySparseUpdMatWSpOuterPdtD(Eigen::MatrixXf& W, Eigen::MatrixXf& T,
     double regMultDiag, double regMultNDiag, int subIter, float wl1Reg,
     float l1Reg);
 float proxL1(float x, float l1Reg);
+void updateMatWSpOuterPdtWMap(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1, 
+    gk_csr_t *mat2, int row2, float scalar, 
+    std::map<int, std::unordered_set<int>>& coords);
 #endif
