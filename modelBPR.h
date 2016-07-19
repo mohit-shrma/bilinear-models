@@ -9,6 +9,8 @@
 #include <cmath>
 #include <unordered_set>
 
+typedef Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> MatrixXb;
+
 class ModelBPR: public ModelFullMat {
   
   public:
@@ -20,15 +22,18 @@ class ModelBPR: public ModelFullMat {
       Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad);
     void computeBPRSparseGrad(int u, int i, int j, 
       Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data);
-    void computeBPRSparseGrad(int u, int i, int j, 
-    Eigen::MatrixXf& Wgrad, Eigen::VectorXf& pdt, const Data& data,
-    std::map<int, std::unordered_set<int>>& coords);
     void gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
       Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad);
     void updUIRatings(std::vector<std::tuple<int, int, int>>& bprTriplets, 
       const Data& data, Eigen::MatrixXf& T, int& subIter, int nTrainSamp, int start, int end);
     void parTrain(const Data &data, Model& bestModel);
     void FTRLTrain(const Data &data, Model& bestModel);
+    void FTRLGradComp(Eigen::MatrixXf& Wgrad, MatrixXb& T, 
+        Eigen::MatrixXf& z, Eigen::MatrixXf& n, gk_csr_t* mat1, int row1, 
+        gk_csr_t *mat2, int row2);
+    void FTRLGradUpd(Eigen::MatrixXf& Wgrad, MatrixXb& T, 
+        Eigen::MatrixXf& z, Eigen::MatrixXf& n, gk_csr_t* mat1, int row1, 
+        gk_csr_t *mat2, int row2);
 };
 
 
