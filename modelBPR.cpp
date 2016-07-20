@@ -763,7 +763,7 @@ void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
     bool allThreadsDone = false;
     std::vector<bool> isProcessed(nThreads - 1, false);
     while(!allThreadsDone) {
-      std::this_thread::sleep_for(std::chrono::seconds(10));
+      std::this_thread::sleep_for(std::chrono::seconds(5));
       allThreadsDone = true;
       for (int thInd = 0; thInd < nThreads-1; thInd++) {
         if (threadDone[thInd]) {
