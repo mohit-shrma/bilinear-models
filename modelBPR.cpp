@@ -671,7 +671,7 @@ void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
   
   std::string prefix = "ModelBPR";
 
-  load(prefix);
+  //load(prefix);
 
   int bestIter, u, pI, nI;
   
@@ -837,7 +837,7 @@ void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
         << " recall duration: " << duration.count() << std::endl;
       std::cout << "W norm: " << W.norm() << std::endl;
 
-      bestModel.save(prefix);
+      //bestModel.save(prefix);
     }
   
   }
