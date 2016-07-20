@@ -28,12 +28,18 @@ class ModelBPR: public ModelFullMat {
       const Data& data, Eigen::MatrixXf& T, int& subIter, int nTrainSamp, int start, int end);
     void parTrain(const Data &data, Model& bestModel);
     void FTRLTrain(const Data &data, Model& bestModel);
+    void ParFTRLTrain(const Data &data, Model& bestModel);
+    void FTRLMiniGrad(std::vector<std::tuple<int, int, int>>& bprTriplets, 
+        const Data& data, Eigen::MatrixXf& Wgrad, Eigen::MatrixXi& T, std::vector<bool>& done, 
+        int thInd, int start, int end);
     void FTRLGradComp(Eigen::MatrixXf& Wgrad, MatrixXb& T, 
         Eigen::MatrixXf& z, Eigen::MatrixXf& n, gk_csr_t* mat1, int row1, 
         gk_csr_t *mat2, int row2);
     void FTRLGradUpd(Eigen::MatrixXf& Wgrad, MatrixXb& T, 
         Eigen::MatrixXf& z, Eigen::MatrixXf& n, gk_csr_t* mat1, int row1, 
         gk_csr_t *mat2, int row2);
+    void computeBPRSparseGradWOReset(int u, int i, int j, 
+        Eigen::MatrixXf& Wgrad, Eigen::MatrixXi& T, Eigen::VectorXf& pdt, const Data& data);
 };
 
 

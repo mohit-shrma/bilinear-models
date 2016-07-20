@@ -46,4 +46,7 @@ float proxL1(float x, float l1Reg);
 void updateMatWSpOuterPdtWMap(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1, 
     gk_csr_t *mat2, int row2, float scalar, 
     std::map<int, std::unordered_set<int>>& coords);
+void updateMatWSpOuterPdt(Eigen::MatrixXf& W, Eigen::MatrixXi& T, 
+    gk_csr_t *mat1, int row1, 
+    gk_csr_t *mat2, int row2, float scalar);
 #endif

@@ -84,6 +84,33 @@ void ModelBPR::computeBPRSparseGrad(int u, int i, int j,
 }
 
 
+void ModelBPR::computeBPRSparseGradWOReset(int u, int i, int j, 
+    Eigen::MatrixXf& Wgrad, Eigen::MatrixXi& T, Eigen::VectorXf& pdt, const Data& data) {
+  
+  float r_ui, r_uj, r_uij, expCoeff;
+   
+  r_ui  = estPosRating(u, i, data, pdt);
+  r_uj  = estNegRating(u, j, data, pdt);
+  r_uij = r_ui - r_uj;
+   
+  //need to update W as j has higher preference
+  expCoeff = 1.0/(1.0 + exp(r_uij));  
+
+  //-f_u*f_i^T  * expCoeff
+  updateMatWSpOuterPdt(Wgrad, T, data.uFAccumMat, u, data.itemFeatMat, i, 
+      -expCoeff);
+
+  //f_u*f_j^T  * expCoeff
+  updateMatWSpOuterPdt(Wgrad, T, data.uFAccumMat, u, data.itemFeatMat, j, 
+      expCoeff);
+
+  //f_i*f_i^T  * expCoeff
+  updateMatWSpOuterPdt(Wgrad, T, data.itemFeatMat, i, data.itemFeatMat, i, 
+      expCoeff);
+  
+}
+
+
 void ModelBPR::gradCheck(Eigen::VectorXf& uFeat, Eigen::VectorXf& iFeat, 
     Eigen::VectorXf& jFeat, Eigen::MatrixXf& Wgrad) {
   
@@ -216,7 +243,6 @@ void ModelBPR::parTrain(const Data &data, Model& bestModel) {
   if (hwThreads > 0  && hwThreads < NTHREADS) {
     nThreads = hwThreads;
   }
-
   std::cout << "nthreads: " << nThreads << std::endl;
 
   //random engine
@@ -618,3 +644,194 @@ void ModelBPR::FTRLTrain(const Data &data, Model& bestModel) {
   }
   
 }
+
+
+void ModelBPR::FTRLMiniGrad(std::vector<std::tuple<int, int, int>>& bprTriplets, 
+    const Data& data, Eigen::MatrixXf& Wgrad, Eigen::MatrixXi& T, 
+    std::vector<bool>& done,  int thInd, int start, int end) {
+  Eigen::VectorXf pdt(nFeatures);
+  int u, pI, nI;
+  Wgrad.fill(0);
+  T.fill(0);
+  for (int i = start; i < end; i++) {
+    auto bprTriplet = bprTriplets[i];
+    //get user, item and rating
+    u    = std::get<0>(bprTriplet);
+    pI   = std::get<1>(bprTriplet);
+    nI   = std::get<2>(bprTriplet);
+    computeBPRSparseGradWOReset(u, pI, nI, Wgrad, T, pdt, data);
+  }
+  done[thInd] = true;
+}
+
+
+void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
+
+  std::cout << "\nModelBPR::FTRLTrain" << std::endl;
+  
+  std::string prefix = "ModelBPR";
+
+  load(prefix);
+
+  int bestIter, u, pI, nI;
+  
+  Eigen::MatrixXf z(nFeatures, nFeatures);
+  Eigen::MatrixXf n(nFeatures, nFeatures);
+
+  Eigen::VectorXf iFeat(nFeatures);
+  Eigen::VectorXf jFeat(nFeatures);
+  Eigen::VectorXf uFeat(nFeatures);
+  Eigen::VectorXf pdt(nFeatures);
+
+  std::map<int, std::unordered_set<int>> coords;
+
+  float bestRecall, prevRecall;
+  int trainNNZ = getNNZ(data.trainMat); 
+ 
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  std::chrono::duration<double> duration; 
+  
+  unsigned long const hwThreads = std::thread::hardware_concurrency();
+  int nThreads = NTHREADS;
+  if (hwThreads > 0  && hwThreads < NTHREADS) {
+    nThreads = hwThreads;
+  }
+  std::cout << "nthreads: " << nThreads << std::endl;
+ 
+  std::vector<Eigen::MatrixXf> Wgrads;
+  std::vector<Eigen::MatrixXi> countTs;
+  for (int i = 0; i < nThreads-1; i++) {
+    Eigen::MatrixXf grad(nFeatures, nFeatures);
+    Eigen::MatrixXi countT(nFeatures, nFeatures);
+    Wgrads.push_back(grad);
+    countTs.push_back(countT);
+  }
+
+  //random engine
+  std::mt19937 mt(seed);
+  
+  auto uiRatings = getBPRUIRatings(data.trainMat);
+  int nTrainSamp = uiRatings.size()*pcSamples;
+  std::cout << "\nnBPR ratings: " << uiRatings.size() << " trainSamples: " << nTrainSamp << std::endl;
+  std::vector<std::tuple<int, int, int>> bprTriplets;
+
+  z.fill(0);
+  n.fill(0);
+
+  float alpha, beta, lambda1, lambda2;
+  alpha = beta = learnRate;
+
+  for (int iter = 0; iter < maxIter; iter++) {
+    //shuffle the user item ratings
+    std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
+    start = std::chrono::system_clock::now();
+    int subIter = 0;
+    
+    bprTriplets.clear();
+    for (auto&& uiRating: uiRatings) {
+      //get user, item and rating
+      u    = std::get<0>(uiRating);
+      pI   = std::get<1>(uiRating);
+      //sample a negative item for user u
+      nI = data.sampleNegItem(u);
+      if (-1 == nI) {
+        //failed to sample negativ item
+        continue;
+      }
+      bprTriplets.push_back(std::make_tuple(u, pI, nI)); 
+    }
+    std::cout << "bprTriplets: " << bprTriplets.size() << std::endl;
+   
+    //allocate thread
+    std::vector<std::thread> threads(nThreads-1);
+    std::vector<bool> threadDone(nThreads-1);
+    std::fill(threadDone.begin(), threadDone.end(), false);
+
+    int nRatingsPerThread = bprTriplets.size()/nThreads;
+    std::cout << "nRatingsPerThread: " << nRatingsPerThread << std::endl;
+    for (int thInd = 0; thInd < nThreads-1; thInd++) {
+      int startInd = thInd*nRatingsPerThread;
+      int endInd = (thInd+1)*nRatingsPerThread;
+      threads[thInd] = std::thread(&ModelBPR::FTRLMiniGrad, this, std::ref(bprTriplets),
+          std::ref(data), std::ref(Wgrads[thInd]), std::ref(countTs[thInd]), 
+          std::ref(threadDone), thInd, startInd, endInd);   
+      
+    }
+
+    //main thread check periodically if threads finished 
+    bool allThreadsDone = false;
+    while(!allThreadsDone) {
+      std::this_thread::sleep_for(std::chrono::seconds(30));
+      allThreadsDone = true;
+      for (int thInd = 0; thInd < nThreads-1; thInd++) {
+        if (threadDone[thInd]) {
+          //update corresponding to thInd
+          auto& Wgrad = Wgrads[thInd];
+          auto& countT = countTs[thInd];
+         
+          for (int ind1 = 0; ind1 < nFeatures; ind1++) {
+            for (int ind2 = 0; ind2 < nFeatures; ind2++) {
+
+              if (ind1 == ind2) {
+                lambda1 = wl1Reg;
+                lambda2 = countT(ind1, ind2)*wl2Reg;
+              } else {
+                lambda1 = l1Reg;
+                lambda2 = countT(ind1, ind2)*l2Reg;
+              }
+              
+              if (z(ind1, ind2) >= -lambda1 && z(ind1, ind2) <= lambda1) {
+                W(ind1, ind2) = 0;
+              } else {
+                float coeff = -1.0/(((beta + std::sqrt(n(ind1, ind2)))/alpha) + lambda2);
+                int signz = -1;
+                if (z(ind1, ind2) > 0) {
+                  signz = 1;
+                }
+                W(ind1, ind2) = coeff*(z(ind1, ind2) - signz*lambda1);
+              }
+
+              float sigma = (1.0/alpha)*(std::sqrt(n(ind1, ind2) + 
+                  Wgrad(ind1, ind2)*Wgrad(ind1, ind2)) - std::sqrt(n(ind1, ind2)));
+              z(ind1, ind2) += Wgrad(ind1, ind2) - sigma*W(ind1, ind2);
+              n(ind1, ind2) += Wgrad(ind1, ind2)*Wgrad(ind1, ind2);
+            }
+          }
+
+        } else {
+          allThreadsDone = false;
+        }
+      }
+    }
+
+    //wait for threads to join 
+    std::for_each(threads.begin(), threads.end(), 
+        std::mem_fn(&std::thread::join));
+    
+    end = std::chrono::system_clock::now();
+    duration = end - start;
+    auto subDuration = duration;
+
+    //perform model evaluation on validation set
+    if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
+      start = std::chrono::system_clock::now();
+      if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
+          prevRecall)) {
+        break;
+      }
+      end = std::chrono::system_clock::now();
+      duration = end - start;
+      std::cout << "\niter: " << iter << " val recall: " << prevRecall
+        << " best recall: " << bestRecall 
+        << " subiter duration: " << subDuration.count() 
+        << " recall duration: " << duration.count() << std::endl;
+      std::cout << "W norm: " << W.norm() << std::endl;
+
+      bestModel.save(prefix);
+    }
+  
+  }
+  
+}
+
+
