@@ -719,7 +719,8 @@ void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
   n.fill(0);
 
   float alpha, beta, lambda1, lambda2;
-  alpha = beta = learnRate;
+  alpha = learnRate;
+  beta = 1;
 
   for (int iter = 0; iter < maxIter; iter++) {
     //shuffle the user item ratings
