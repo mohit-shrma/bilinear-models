@@ -667,7 +667,7 @@ void ModelBPR::FTRLMiniGrad(std::vector<std::tuple<int, int, int>>& bprTriplets,
 
 void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
 
-  std::cout << "\nModelBPR::FTRLTrain" << std::endl;
+  std::cout << "\nModelBPR::ParFTRLTrain" << std::endl;
   
   std::string prefix = "ModelBPR";
 
@@ -760,11 +760,17 @@ void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
 
     //main thread check periodically if threads finished 
     bool allThreadsDone = false;
+    std::vector<bool> isProcessed(nThreads - 1, false);
     while(!allThreadsDone) {
-      std::this_thread::sleep_for(std::chrono::seconds(30));
+      std::this_thread::sleep_for(std::chrono::seconds(10));
       allThreadsDone = true;
       for (int thInd = 0; thInd < nThreads-1; thInd++) {
         if (threadDone[thInd]) {
+          
+          if (isProcessed[thInd]) {
+            continue;
+          }
+          
           //update corresponding to thInd
           auto& Wgrad = Wgrads[thInd];
           auto& countT = countTs[thInd];
@@ -795,9 +801,12 @@ void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
                   Wgrad(ind1, ind2)*Wgrad(ind1, ind2)) - std::sqrt(n(ind1, ind2)));
               z(ind1, ind2) += Wgrad(ind1, ind2) - sigma*W(ind1, ind2);
               n(ind1, ind2) += Wgrad(ind1, ind2)*Wgrad(ind1, ind2);
+
             }
           }
-
+          
+          isProcessed[thInd] = true;
+          //std::cout << "Processed thread: " << thInd << std::endl;
         } else {
           allThreadsDone = false;
         }
