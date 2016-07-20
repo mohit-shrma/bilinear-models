@@ -516,7 +516,7 @@ void ModelBPR::FTRLGradUpd(Eigen::MatrixXf& Wgrad, MatrixXb& T,
   int ind1, ind2;
   float lambda1, lambda2;
   float alpha = learnRate;
-  float beta = learnRate;
+  float beta = 1;
   for (int ii1 = mat1->rowptr[row1]; ii1 < mat1->rowptr[row1+1]; ii1++) {
     ind1 = mat1->rowind[ii1];
     for (int ii2 = mat2->rowptr[row2]; ii2 < mat2->rowptr[row2+1]; ii2++) {
