@@ -29,6 +29,7 @@ class ModelBPR: public ModelFullMat {
     void parTrain(const Data &data, Model& bestModel);
     void FTRLTrain(const Data &data, Model& bestModel);
     void ParFTRLTrain(const Data &data, Model& bestModel);
+    void ParFTRLHogTrain(const Data &data, Model& bestModel);
     void FTRLMiniGrad(std::vector<std::tuple<int, int, int>>& bprTriplets, 
         const Data& data, Eigen::MatrixXf& Wgrad, Eigen::MatrixXi& T, std::vector<bool>& done, 
         int thInd, int start, int end);
@@ -40,6 +41,11 @@ class ModelBPR: public ModelFullMat {
         gk_csr_t *mat2, int row2);
     void computeBPRSparseGradWOReset(int u, int i, int j, 
         Eigen::MatrixXf& Wgrad, Eigen::MatrixXi& T, Eigen::VectorXf& pdt, const Data& data);
+    void FTRLMiniGradNUpd(
+        std::vector<std::tuple<int, int, int>>& bprTriplets, 
+        const Data& data, Eigen::MatrixXf& Wgrad, Eigen::MatrixXi& T,
+        Eigen::MatrixXf& z, Eigen::MatrixXf& n,
+        int start, int end);
 };
 
 
