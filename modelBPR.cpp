@@ -803,14 +803,22 @@ void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
     std::vector<bool> threadDone(nThreads-1);
     std::fill(threadDone.begin(), threadDone.end(), false);
 
-    int nRatingsPerThread = bprTriplets.size()/nThreads;
+    int nRatingsPerThread = bprTriplets.size()/(nThreads-1);
     std::cout << "nRatingsPerThread: " << nRatingsPerThread << std::endl;
     for (int thInd = 0; thInd < nThreads-1; thInd++) {
       int startInd = thInd*nRatingsPerThread;
       int endInd = (thInd+1)*nRatingsPerThread;
-      threads[thInd] = std::thread(&ModelBPR::FTRLMiniGrad, this, std::ref(bprTriplets),
+      if (thInd == nThreads-2) {
+        //last thread
+        endInd = bprTriplets.size();
+        threads[thInd] = std::thread(&ModelBPR::FTRLMiniGrad, this, std::ref(bprTriplets),
           std::ref(data), std::ref(Wgrads[thInd]), std::ref(countTs[thInd]), 
           std::ref(threadDone), thInd, startInd, endInd);   
+      } else{
+        threads[thInd] = std::thread(&ModelBPR::FTRLMiniGrad, this, std::ref(bprTriplets),
+          std::ref(data), std::ref(Wgrads[thInd]), std::ref(countTs[thInd]), 
+          std::ref(threadDone), thInd, startInd, endInd);   
+      }
       
     }
 
@@ -935,7 +943,7 @@ void ModelBPR::ParFTRLHogTrain(const Data &data, Model& bestModel) {
  
   std::vector<Eigen::MatrixXf> Wgrads;
   std::vector<Eigen::MatrixXi> countTs;
-  for (int i = 0; i < nThreads-1; i++) {
+  for (int i = 0; i < nThreads; i++) {
     Eigen::MatrixXf grad(nFeatures, nFeatures);
     Eigen::MatrixXi countT(nFeatures, nFeatures);
     Wgrads.push_back(grad);
@@ -992,6 +1000,10 @@ void ModelBPR::ParFTRLHogTrain(const Data &data, Model& bestModel) {
           std::ref(data), std::ref(Wgrads[thInd]), std::ref(countTs[thInd]), 
           std::ref(z), std::ref(n), startInd, endInd);   
     }
+
+    //main thread work
+    FTRLMiniGradNUpd(bprTriplets, data, Wgrads[nThreads-1], countTs[nThreads-1], z, n, 
+        (nThreads-1)*nRatingsPerThread, bprTriplets.size());
 
     //wait for threads to join 
     std::for_each(threads.begin(), threads.end(), 
