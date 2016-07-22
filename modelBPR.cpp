@@ -914,7 +914,7 @@ void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
 
 void ModelBPR::ParFTRLHogTrain(const Data &data, Model& bestModel) {
 
-  std::cout << "\nModelBPR::ParFTRLTrain" << std::endl;
+  std::cout << "\nModelBPR::ParFTRLHogTrain" << std::endl;
   
   std::string prefix = "ModelBPR";
 
