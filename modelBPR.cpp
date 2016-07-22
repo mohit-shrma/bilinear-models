@@ -690,9 +690,12 @@ void ModelBPR::FTRLMiniGradNUpd(
 
   for (int ind1 = 0; ind1 < nFeatures; ind1++) {
     for (int ind2 = 0; ind2 < nFeatures; ind2++) {
+      //better performance in hog when below condition commented
+      /*
       if (0 == T(ind1, ind2)) {
         continue;
       }
+      */
       if (ind1 == ind2) {
         lambda1 = wl1Reg;
         lambda2 = T(ind1, ind2)*wl2Reg;
@@ -843,9 +846,9 @@ void ModelBPR::ParFTRLTrain(const Data &data, Model& bestModel) {
          
           for (int ind1 = 0; ind1 < nFeatures; ind1++) {
             for (int ind2 = 0; ind2 < nFeatures; ind2++) {
-              if (0 == countT(ind1, ind2)) {
-                continue;
-              }
+              //if (0 == countT(ind1, ind2)) {
+              //  continue;
+              //}
               if (ind1 == ind2) {
                 lambda1 = wl1Reg;
                 lambda2 = countT(ind1, ind2)*wl2Reg;
