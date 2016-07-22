@@ -1,5 +1,6 @@
 #include "modelBPR.h"
 
+
 bool ModelBPR::isTerminateModelInit(Model& bestModel, const Data& data, int iter,
     int& bestIter, float& bestRecall, float& prevRecall) {
 
@@ -1023,7 +1024,7 @@ void ModelBPR::ParFTRLHogTrain(const Data &data, Model& bestModel) {
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
       start = std::chrono::system_clock::now();
-      if(isTerminateModel(bestModel, data, iter, bestIter, bestRecall, 
+      if(isTerminateFModel(bestModel, data, iter, bestIter, bestRecall, 
           prevRecall)) {
         break;
       }

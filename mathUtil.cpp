@@ -174,6 +174,39 @@ float vecSpVecDot(Eigen::VectorXf& vec, gk_csr_t *mat, int row) {
 }
 
 
+//compute W*[f_i1, f_i2 ... ]
+void matSpVecsPdt(Eigen::MatrixXf& W, gk_csr_t *mat, 
+    std::vector<int>& inds, Eigen::MatrixXf& pdt) {
+  
+  int colInd;
+  float val;
+  pdt.fill(0);
+
+  if (mat->ncols != W.cols()) {
+    std::cerr << "\nmatSpVecsPdt: dimensions dont match: (" 
+      << mat->nrows << "," << mat->ncols << ") (" 
+      << W.rows() << "," << W.cols() << ")" <<  std::endl;
+  }
+
+  if (pdt.cols() != inds.size()) {
+    std::cerr << "matSpVecsPdt: nItems and n cols in product matrix don't match" 
+      << std::endl;
+  }
+  
+  int j = 0;
+  for (auto&& ind: inds) {
+    for (int ii = mat->rowptr[ind]; ii < mat->rowptr[ind+1]; ind++) {
+      colInd = mat->rowind[ii];
+      val = mat->rowval[ii];
+      for (int k = 0; k < W.rows(); k++) {
+        pdt(k, j) += W(k, colInd)*val;
+      }
+    }
+  }
+
+}
+
+
 //compute dot product of matrix and sparse vector: Ax
 void matSpVecPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
     Eigen::VectorXf& pdt) {
