@@ -60,7 +60,7 @@ class Model {
       int& bestIter, float& bestRecall, float& prevRecall); 
     bool isTerminateFModel(Model& bestModel, const Data& data, int iter,
         int& bestIter, float& bestRecall, float& prevRecall);
-    bool isTerminateUVTModel(Model& bestModel, const Data& data, int iter,
+    bool isTerminatewUVTModel(Model& bestModel, const Data& data, int iter,
         int& bestIter, float& bestRecall, float& prevRecall);
     bool isTerminateModelObj(Model& bestModel, const Data& data, int iter,
       int& bestIter, float& bestObj, float& prevObj);
@@ -74,7 +74,7 @@ class Model {
       std::unordered_set<int> items);
     float computeRecallParFVec(gk_csr_t *mat, const Data &data, int N, 
       std::unordered_set<int> items);
-    float computeRecallParUVTVec(gk_csr_t *mat, const Data &data, int N, 
+    float computeRecallParwUVTVec(gk_csr_t *mat, const Data &data, int N, 
       std::unordered_set<int> items);
     void computeRecallUsersVec(gk_csr_t *mat, int uStart, int uEnd, 
       const Data& data, int N, std::unordered_set<int>& items, 

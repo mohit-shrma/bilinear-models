@@ -57,11 +57,11 @@ bool Model::isTerminateFModel(Model& bestModel, const Data& data, int iter,
 }
 
 
-bool Model::isTerminateUVTModel(Model& bestModel, const Data& data, int iter,
+bool Model::isTerminatewUVTModel(Model& bestModel, const Data& data, int iter,
     int& bestIter, float& bestRecall, float& prevRecall) {
   
   bool ret = false;
-  float currRecall = computeRecallParUVTVec(data.valMat, data, 10, data.valItems);
+  float currRecall = computeRecallParwUVTVec(data.valMat, data, 10, data.valItems);
   
   if (iter > 0) {
     
@@ -618,7 +618,7 @@ float Model::computeRecallParFVec(gk_csr_t *mat, const Data &data, int N,
 }
 
 
-float Model::computeRecallParUVTVec(gk_csr_t *mat, const Data &data, int N, 
+float Model::computeRecallParwUVTVec(gk_csr_t *mat, const Data &data, int N, 
     std::unordered_set<int> items) {
 
   int i, ii;
@@ -644,8 +644,8 @@ float Model::computeRecallParUVTVec(gk_csr_t *mat, const Data &data, int N,
   
   const std::vector<int> vItems(items.begin(), items.end());
 
-  //compute UV^T*[f_i1, f_i2, ....]
-  UVSpVecsPdt(U, V, data.itemFeatMat, vItems, Wf);
+  //compute ( w + UV^T)*[f_i1, f_i2, ....]
+  wUVSpVecsPdt(w, U, V, data.itemFeatMat, vItems, Wf);
 
   std::random_device rd;
   std::mt19937 g(rd());

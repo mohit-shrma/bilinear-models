@@ -209,8 +209,11 @@ void matSpVecsPdt(Eigen::MatrixXf& W, gk_csr_t *mat,
 }
 
 
-void UVSpVecsPdt(Eigen::MatrixXf& U, Eigen::MatrixXf& V, gk_csr_t *mat, 
+void wUVSpVecsPdt(Eigen::VectorXf& w, Eigen::MatrixXf& U, Eigen::MatrixXf& V, gk_csr_t *mat, 
     const std::vector<int>& inds, Eigen::MatrixXf& pdt) {
+  
+  int colInd;
+  float val;
   
   pdt.fill(0);
   Eigen::VectorXf vec(U.cols());
@@ -234,6 +237,11 @@ void UVSpVecsPdt(Eigen::MatrixXf& U, Eigen::MatrixXf& V, gk_csr_t *mat,
     spVecMatPdt(V, mat, ind, vec); 
     //compute U*(V^T*f_i)
     pdt.col(j) = U*vec; 
+    for (int ii = mat->rowptr[ind]; ii < mat->rowptr[ind+1]; ii++) {
+      colInd = mat->rowind[ii];
+      val = mat->rowval[ii];
+      pdt(colInd, j) += val*w(colInd);
+    }
   }
 
 }
