@@ -56,6 +56,49 @@ bool Model::isTerminateFModel(Model& bestModel, const Data& data, int iter,
   return ret;
 }
 
+
+bool Model::isTerminateUVTModel(Model& bestModel, const Data& data, int iter,
+    int& bestIter, float& bestRecall, float& prevRecall) {
+  
+  bool ret = false;
+  float currRecall = computeRecallParUVTVec(data.valMat, data, 10, data.valItems);
+  
+  if (iter > 0) {
+    
+    if (currRecall > bestRecall) {
+      bestModel = *this;
+      bestRecall = currRecall;
+      bestIter = iter;
+    }
+    
+    if (iter - bestIter >= CHANCE_ITER) {
+      std::cout << "\nNOT CONVERGED: bestIter: " << bestIter << 
+        " bestRecall: " << bestRecall << " currIter: " << iter << 
+        " currRecall: " << currRecall << std::endl;
+      ret = true;
+    }
+
+    if (fabs(prevRecall - currRecall) < EPS) {
+      //convergence
+      std::cout << "\nConverged in iteration: " << iter << " prevRecall: "
+        << prevRecall << " currRecall: " << currRecall;
+      ret = true;
+    }
+
+  }
+
+  if (0 == iter) {
+    bestModel = *this;
+    bestRecall = currRecall;
+    bestIter = iter;
+  }
+
+  prevRecall = currRecall;
+
+  return ret;
+}
+
+
 bool Model::isTerminateModel(Model& bestModel, const Data& data, int iter,
     int& bestIter, float& bestRecall, float& prevRecall) {
   
@@ -517,6 +560,92 @@ float Model::computeRecallParFVec(gk_csr_t *mat, const Data &data, int N,
 
   //compute W*[f_i1, f_i2, ....]
   matSpVecsPdt(W, data.itemFeatMat, vItems, Wf);
+
+  std::random_device rd;
+  std::mt19937 g(rd());
+  std::shuffle(testUsers.begin(), testUsers.end(), g);
+
+  unsigned long const hwThreads = std::thread::hardware_concurrency();
+  //unsigned long const nThreads = std::min(hwThreads != 0? hwThreads:2, NTHREADS);
+ 
+  //std::cout << "\nhwThreads: " << hwThreads;
+  int nThreads = NTHREADS;
+  if (hwThreads > 0  && hwThreads < NTHREADS) {
+    nThreads = hwThreads;
+  }
+  //std::cout << "\nnthreads: " << nThreads;
+
+  //allocate threads
+  std::vector<std::thread> threads(nThreads-1);
+  
+  //storage for results from threads
+  std::vector<float> uRecalls(mat->nrows);
+
+  int nUsersPerThread = testUsers.size() / nThreads;
+  
+  for (u = 0, i = 0; u < testUsers.size(); u+=nUsersPerThread) {
+    if (i < nThreads-1) {
+      //start computation on thread
+      threads[i++] = std::thread(&Model::computeRecallUsersFVec, this, mat, u, 
+          u+nUsersPerThread,
+          std::ref(data), std::ref(Wf), N, std::ref(vItems), std::ref(isTestUser), 
+          std::ref(uRecalls), std::ref(testUsers));
+      
+    } else {
+      //in main thread
+      computeRecallUsersFVec(mat, u, testUsers.size(), data, std::ref(Wf), N, 
+          std::ref(vItems), isTestUser, uRecalls, testUsers);
+      u = testUsers.size();
+    }
+  }
+  
+  //wait for threads to finish
+  std::for_each(threads.begin(), threads.end(), 
+      std::mem_fn(&std::thread::join));
+
+  //std::cout << "\nRelevant users with test items: " << nRelevantUsers;
+
+  //compute recall
+  float recall = 0;
+  for (u = 0; u < mat->nrows; u++) {
+    if (uRecalls[u] >= 0) {
+      recall += uRecalls[u];
+    }
+  }
+  recall = recall/nRelevantUsers;
+  
+  return recall;
+}
+
+
+float Model::computeRecallParUVTVec(gk_csr_t *mat, const Data &data, int N, 
+    std::unordered_set<int> items) {
+
+  int i, ii;
+  size_t u;
+  int nRelevantUsers;
+  Eigen::VectorXf iFeat(nFeatures);
+  Eigen::MatrixXf Wf(nFeatures, items.size());
+
+  //find whether users have items in test set
+  std::vector<bool> isTestUser(mat->nrows, false);
+  std::vector<int> testUsers;
+  nRelevantUsers = 0;
+  for (u = 0; u < mat->nrows; u++) {
+    for (ii = mat->rowptr[u]; ii < mat->rowptr[u+1]; ii++) {
+      if (mat->rowval[ii] > 0) {
+        isTestUser[u] = true;
+        testUsers.push_back(u);
+        nRelevantUsers++;
+        break;
+      }
+    }
+  } 
+  
+  const std::vector<int> vItems(items.begin(), items.end());
+
+  //compute UV^T*[f_i1, f_i2, ....]
+  UVSpVecsPdt(U, V, data.itemFeatMat, vItems, Wf);
 
   std::random_device rd;
   std::mt19937 g(rd());

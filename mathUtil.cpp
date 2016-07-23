@@ -209,6 +209,38 @@ void matSpVecsPdt(Eigen::MatrixXf& W, gk_csr_t *mat,
 }
 
 
+void UVSpVecsPdt(Eigen::MatrixXf& U, Eigen::MatrixXf& V, gk_csr_t *mat, 
+    const std::vector<int>& inds, Eigen::MatrixXf& pdt) {
+  
+  int colInd;
+  float val;
+  pdt.fill(0);
+  Eigen::VectorXf vec(U.cols());
+
+  if (mat->ncols != W.cols()) {
+    std::cerr << "\nmatSpVecsPdt: dimensions dont match: (" 
+      << mat->nrows << "," << mat->ncols << ") (" 
+      << W.rows() << "," << W.cols() << ")" <<  std::endl;
+  }
+
+  if (pdt.cols() != inds.size()) {
+    std::cerr << "matSpVecsPdt: nItems and n cols in product matrix don't match" 
+      << std::endl;
+  }
+  
+  const int ncols = inds.size();
+
+  for (int j = 0; j < ncols; j++) {
+    int ind = inds[j];
+    //V^T*f_i in vec
+    spVecMatPdt(V, mat, ind, vec); 
+    //compute U*(V^T*f_i)
+    pdt.col(j) = U*vec; 
+  }
+
+}
+
+
 //compute dot product of matrix and sparse vector: Ax
 void matSpVecPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
     Eigen::VectorXf& pdt) {
