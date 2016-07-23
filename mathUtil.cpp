@@ -176,7 +176,7 @@ float vecSpVecDot(Eigen::VectorXf& vec, gk_csr_t *mat, int row) {
 
 //compute W*[f_i1, f_i2 ... ]
 void matSpVecsPdt(Eigen::MatrixXf& W, gk_csr_t *mat, 
-    std::vector<int>& inds, Eigen::MatrixXf& pdt) {
+    const std::vector<int>& inds, Eigen::MatrixXf& pdt) {
   
   int colInd;
   float val;
@@ -193,9 +193,11 @@ void matSpVecsPdt(Eigen::MatrixXf& W, gk_csr_t *mat,
       << std::endl;
   }
   
-  int j = 0;
-  for (auto&& ind: inds) {
-    for (int ii = mat->rowptr[ind]; ii < mat->rowptr[ind+1]; ind++) {
+  const int ncols = inds.size();
+
+  for (int j = 0; j < ncols; j++) {
+    int ind = inds[j];
+    for (int ii = mat->rowptr[ind]; ii < mat->rowptr[ind+1]; ii++) {
       colInd = mat->rowind[ii];
       val = mat->rowval[ii];
       for (int k = 0; k < W.rows(); k++) {
@@ -255,7 +257,7 @@ void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row,
     for (int ii = mat->rowptr[row]; ii < mat->rowptr[row+1]; ii++) {
       colInd = mat->rowind[ii];
       val = mat->rowval[ii];
-        pdt[k] += W(colInd, k)*val;
+      pdt[k] += W(colInd, k)*val;
     }
   }
 

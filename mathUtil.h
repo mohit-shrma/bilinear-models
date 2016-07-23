@@ -1,6 +1,5 @@
 #ifndef _MATH_UTIL_H_
 #define _MATH_UTIL_H_
-
 #include <Eigen/Dense>
 #include <iostream>
 #include <map>
@@ -20,7 +19,7 @@ void matSpVecPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row,
 void spVecMatPdt(Eigen::MatrixXf& W, gk_csr_t *mat, int row, 
     Eigen::VectorXf& pdt);
 void matSpVecsPdt(Eigen::MatrixXf& W, gk_csr_t *mat, 
-    std::vector<int>& inds, Eigen::MatrixXf& pdt);
+    const std::vector<int>& inds, Eigen::MatrixXf& pdt);
 void updateMatWSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1, 
     gk_csr_t *mat2, int row2, float scalar);
 void updateMatWSymSpOuterPdt(Eigen::MatrixXf& W, gk_csr_t *mat1, int row1, 

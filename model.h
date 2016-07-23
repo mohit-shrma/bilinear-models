@@ -77,7 +77,7 @@ class Model {
       std::vector<bool>& isTestUser, std::vector<float>& uRecalls,
       std::vector<int>& testUsers);
     void computeRecallUsersFVec(gk_csr_t *mat, int uStart, int uEnd, 
-        const Data& data, Eigen::MatrixXf& Wf, int N, std::vector<int>& items, 
+        const Data& data, Eigen::MatrixXf& Wf, int N, const std::vector<int>& items, 
         std::vector<bool>& isTestUser, std::vector<float>& uRecalls,
         std::vector<int>& testUsers);
 

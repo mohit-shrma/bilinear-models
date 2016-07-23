@@ -414,10 +414,9 @@ float Model::computeRecallParVec(gk_csr_t *mat, const Data &data, int N,
 
 
 void Model::computeRecallUsersFVec(gk_csr_t *mat, int uStart, int uEnd, 
-    const Data& data, Eigen::MatrixXf& Wf, int N, std::vector<int>& items, 
+    const Data& data, Eigen::MatrixXf& Wf, int N, const std::vector<int>& items, 
     std::vector<bool>& isTestUser, std::vector<float>& uRecalls,
     std::vector<int>& testUsers) {
-  
   Eigen::VectorXf ratings(items.size());
 
   auto comparePair = [](std::pair<int, float> a, std::pair<int, float> b) { 
@@ -432,7 +431,6 @@ void Model::computeRecallUsersFVec(gk_csr_t *mat, int uStart, int uEnd,
 
   int uCount = 0;
   
-
   for (int uInd = uStart; uInd < uEnd; uInd++) {
     
     int u = testUsers[uInd];
@@ -515,7 +513,7 @@ float Model::computeRecallParFVec(gk_csr_t *mat, const Data &data, int N,
     }
   } 
   
-  std::vector<int> vItems(items.begin(), items.end());
+  const std::vector<int> vItems(items.begin(), items.end());
 
   //compute W*[f_i1, f_i2, ....]
   matSpVecsPdt(W, data.itemFeatMat, vItems, Wf);
@@ -549,10 +547,11 @@ float Model::computeRecallParFVec(gk_csr_t *mat, const Data &data, int N,
           u+nUsersPerThread,
           std::ref(data), std::ref(Wf), N, std::ref(vItems), std::ref(isTestUser), 
           std::ref(uRecalls), std::ref(testUsers));
+      
     } else {
       //in main thread
-      computeRecallUsersFVec(mat, u, testUsers.size(), data, std::ref(Wf), N, vItems, isTestUser, 
-          uRecalls, testUsers);
+      computeRecallUsersFVec(mat, u, testUsers.size(), data, std::ref(Wf), N, 
+          std::ref(vItems), isTestUser, uRecalls, testUsers);
       u = testUsers.size();
     }
   }
