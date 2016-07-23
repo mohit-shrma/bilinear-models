@@ -212,15 +212,13 @@ void matSpVecsPdt(Eigen::MatrixXf& W, gk_csr_t *mat,
 void UVSpVecsPdt(Eigen::MatrixXf& U, Eigen::MatrixXf& V, gk_csr_t *mat, 
     const std::vector<int>& inds, Eigen::MatrixXf& pdt) {
   
-  int colInd;
-  float val;
   pdt.fill(0);
   Eigen::VectorXf vec(U.cols());
 
-  if (mat->ncols != W.cols()) {
-    std::cerr << "\nmatSpVecsPdt: dimensions dont match: (" 
+  if (mat->ncols != V.rows()) {
+    std::cerr << "\nUVSpVecsPdt: dimensions dont match: (" 
       << mat->nrows << "," << mat->ncols << ") (" 
-      << W.rows() << "," << W.cols() << ")" <<  std::endl;
+      << V.rows() << "," << V.cols() << ")" <<  std::endl;
   }
 
   if (pdt.cols() != inds.size()) {
