@@ -9,6 +9,10 @@ class ModelLinFactMatBPR: public ModelLinFactMat {
     ModelLinFactMatBPR(const Params &params, int nFeatures):ModelLinFactMat(params, nFeatures){}
 
     virtual void train(const Data &data, Model& bestModel);
+    void parTrain(const Data &data, Model& bestModel); 
+    void updateTriplets(
+        std::vector<std::tuple<int, int, int>>& triplets, const Data& data,
+        int start, int end) ;
     void computeUGrad(int u, int i, int j, const Data& data, 
       Eigen::MatrixXf& Ugrad, Eigen::VectorXf& iFeat, Eigen::VectorXf& jFeat,
       Eigen::VectorXf& uFeat);
