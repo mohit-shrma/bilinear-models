@@ -62,6 +62,8 @@ class Model {
         int& bestIter, float& bestRecall, float& prevRecall);
     bool isTerminatewUVTModel(Model& bestModel, const Data& data, int iter,
         int& bestIter, float& bestRecall, float& prevRecall);
+    bool isTerminatewModel(Model& bestModel, const Data& data, int iter,
+        int& bestIter, float& bestRecall, float& prevRecall);
     bool isTerminateModelObj(Model& bestModel, const Data& data, int iter,
       int& bestIter, float& bestObj, float& prevObj);
     void computeRecallUsers(gk_csr_t *mat, int uStart, int uEnd, 
@@ -84,6 +86,8 @@ class Model {
         const Data& data, Eigen::MatrixXf& Wf, int N, const std::vector<int>& items, 
         std::vector<bool>& isTestUser, std::vector<float>& uRecalls,
         std::vector<int>& testUsers);
+    float computeRecallParwVec(gk_csr_t *mat, const Data &data, int N, 
+      std::unordered_set<int> items);
 
     std::string modelSign();
     void save(std::string opPrefix);

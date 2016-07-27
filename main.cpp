@@ -12,7 +12,7 @@
 #include "modelLinSymBPR.h"
 //#include "modelFactSymRMSE.h"
 #include "modelLinearRMSE.h"
-//#include "modelLinearBPR.h"
+#include "modelLinearBPR.h"
 #include "modelLinFactMatBPR.h"
 #include "modelRMSE.h"
 #include "modelBPR.h"
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   std::srand(params.seed);
 
   Data data(params);
-  
+ 
   std::chrono::time_point<std::chrono::system_clock> start, end;
  
   //create baseline model
@@ -64,18 +64,18 @@ int main(int argc, char *argv[]) {
   //std::cout << "\nVal baseline recall par: " << baseValRecallPar << std::endl;
   
   //ModelLinSym bestModel(params, data.nFeatures);
-  ModelBPR bestModel(params, data.nFeatures);
+  ModelLinearBPR bestModel(params, data.nFeatures);
 
   //ModelLinSymBPR m(params, data.nFeatures);
-  ModelBPR m(params, data.nFeatures);
+  ModelLinearBPR m(params, data.nFeatures);
   
   m.train(data, bestModel);
   
-  float testRecall = bestModel.computeRecallParVec(data.testMat, data, 10, 
+  float testRecall = bestModel.computeRecallParFVec(data.testMat, data, 10, 
       data.testItems);
   std::cout << "\nTest recall: " << testRecall;
 
-  float valRecall = bestModel.computeRecallParVec(data.valMat, data, 10, 
+  float valRecall = bestModel.computeRecallParFVec(data.valMat, data, 10, 
       data.valItems);
   std::cout << "\nVal recall: " << valRecall;
 
