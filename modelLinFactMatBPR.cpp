@@ -132,10 +132,6 @@ void ModelLinFactMatBPR::updateTriplets(
   Eigen::MatrixXf Ugrad(nFeatures, rank);  
   Eigen::MatrixXf Vgrad(nFeatures, rank);  
   
-  Eigen::VectorXf wgradTmp(nFeatures);
-  Eigen::MatrixXf UgradTmp(nFeatures, rank);  
-  Eigen::MatrixXf VgradTmp(nFeatures, rank); 
-
   wgrad.fill(0);
   Ugrad.fill(0);
   Vgrad.fill(0);
@@ -148,21 +144,18 @@ void ModelLinFactMatBPR::updateTriplets(
     extractFeat(data.itemFeatMat, i, iFeat);
     extractFeat(data.itemFeatMat, j, jFeat);
     //compute w gradient
-    computewGrad(u, i, j, data, wgradTmp, iFeat, jFeat, uFeat);
-    wgrad += wgradTmp;
+    computewGrad(u, i, j, data, wgrad, iFeat, jFeat, uFeat);
+    w -= learnRate*wgrad;
 
     //compute U gradient
-    computeUGrad(u, i, j, data, UgradTmp, iFeat, jFeat, uFeat);
-    Ugrad += UgradTmp;
+    computeUGrad(u, i, j, data, Ugrad, iFeat, jFeat, uFeat);
+    U -= learnRate*Ugrad;
 
     //compute V gradient
-    computeVGrad(u, i, j, data, VgradTmp, iFeat, jFeat, uFeat);
-    Vgrad += VgradTmp;
+    computeVGrad(u, i, j, data, Vgrad, iFeat, jFeat, uFeat);
+    V -= learnRate*Vgrad;
   }
 
-    w -= learnRate*wgrad;
-    U -= learnRate*Ugrad;
-    V -= learnRate*Vgrad;
 }
 
 
