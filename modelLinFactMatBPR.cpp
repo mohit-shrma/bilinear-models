@@ -69,7 +69,7 @@ void ModelLinFactMatBPR::train(const Data &data, Model& bestModel) {
   std::mt19937 mt(seed);
   
   auto uiRatings = getBPRUIRatings(data.trainMat);
-  std::cout << "\nuiRatings: " << uiRatings.size();
+  std::cout << "\nuiRatings: " << uiRatings.size() << std::endl;
   
   for (int iter = 0; iter < maxIter; iter++) {
     //shuffle the user item ratings
@@ -105,9 +105,15 @@ void ModelLinFactMatBPR::train(const Data &data, Model& bestModel) {
           prevRecall)) {
         break;
       }
-      std::cout << std::endl <<"iter: " << iter << " val recall: " << prevRecall
+      auto uNorm = U.norm();
+      auto vNorm = V.norm();
+      std::cout << "iter: " << iter << " val recall: " << prevRecall
         << " best recall: " << bestRecall << " w norm: " << w.norm()
-        << " U norm: " << U.norm() << " V norm: " << V.norm();
+        << " U norm: " << uNorm << " V norm: " << vNorm << std::endl;
+      if (uNorm < EPS || vNorm < EPS) {
+        std::cout << "U norm or V norm: 0" << std::endl;
+        break;
+      }
     }
   
   }
@@ -192,7 +198,11 @@ void ModelLinFactMatBPR::parTrain(const Data &data, Model& bestModel) {
   
   std::vector<std::tuple<int, int, int>> bprTriplets;
   
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  std::chrono::duration<double> duration; 
+  
   for (int iter = 0; iter < maxIter; iter++) { 
+    start = std::chrono::system_clock::now();
     //shuffle the user item ratings
     std::shuffle(uiRatings.begin(), uiRatings.end(), mt);
     bprTriplets.clear();
@@ -232,15 +242,24 @@ void ModelLinFactMatBPR::parTrain(const Data &data, Model& bestModel) {
     std::for_each(threads.begin(), threads.end(), 
         std::mem_fn(&std::thread::join));
     
+    end = std::chrono::system_clock::now();
+    duration = end - start;
+    auto subDuration = duration;
+    
     //perform model evaluation on validation set
     if (iter %OBJ_ITER == 0 || iter == maxIter - 1) {
+      start = std::chrono::system_clock::now();
       if(isTerminatewUVTModel(bestModel, data, iter, bestIter, bestRecall, 
           prevRecall)) {
         break;
       }
+      end = std::chrono::system_clock::now();
+      duration = end - start;
       std::cout << std::endl <<"iter: " << iter << " val recall: " << prevRecall
         << " best recall: " << bestRecall << " w norm: " << w.norm()
-        << " U norm: " << U.norm() << " V norm: " << V.norm();
+        << " U norm: " << U.norm() << " V norm: " << V.norm()
+        << " subiter duration: " << subDuration.count() 
+        << " recall duration: " << duration.count() << std::endl;
     }
   
   }
